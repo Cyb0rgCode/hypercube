@@ -152,6 +152,95 @@ h1 {
   margin-bottom: 24px;
   letter-spacing: -0.02em;
 }
+
+/* ── Page header (hero) ── */
+.page-header { margin-bottom: 28px; }
+.page-title {
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin: 0 0 6px;
+  background: linear-gradient(180deg, var(--text) 0%, rgba(230,233,242,0.7) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.page-subtitle {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* ── Focus banner ── */
+.focus-banner {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 22px 24px;
+  margin-bottom: 24px;
+  background: linear-gradient(135deg, rgba(124,117,255,0.12) 0%, rgba(56,189,248,0.06) 100%);
+  border: 1px solid rgba(124,117,255,0.25);
+  animation: bannerIn 0.6s cubic-bezier(0.4,0,0.2,1) backwards;
+}
+.focus-banner-glow {
+  position: absolute;
+  width: 280px;
+  height: 280px;
+  right: -80px;
+  top: -120px;
+  background: radial-gradient(circle, rgba(124,117,255,0.25), transparent 60%);
+  pointer-events: none;
+  filter: blur(40px);
+}
+.focus-banner-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--accent), var(--cyan));
+  color: #fff;
+  flex-shrink: 0;
+  box-shadow: 0 8px 24px rgba(124,117,255,0.4);
+  position: relative;
+  z-index: 1;
+}
+.focus-banner-icon svg { width: 24px; height: 24px; }
+.focus-banner-content { flex: 1; min-width: 0; position: relative; z-index: 1; }
+.focus-banner-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--accent-light);
+  margin-bottom: 4px;
+}
+.focus-banner-task {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+.focus-banner-meta {
+  font-size: 12.5px;
+  color: var(--muted);
+  font-weight: 500;
+  white-space: nowrap;
+  position: relative;
+  z-index: 1;
+}
+.focus-banner-meta strong {
+  color: var(--text);
+  font-weight: 700;
+}
+@keyframes bannerIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 h2 {
   font-size: 15px;
   font-weight: 600;
@@ -175,6 +264,16 @@ h2 {
   grid-template-columns: repeat(4, 1fr);
   gap: 14px;
   margin-bottom: 28px;
+}
+.stat-cards .card { animation: cardIn 0.5s cubic-bezier(0.4,0,0.2,1) backwards; }
+.stat-cards .card:nth-child(1) { animation-delay: 0ms; }
+.stat-cards .card:nth-child(2) { animation-delay: 60ms; }
+.stat-cards .card:nth-child(3) { animation-delay: 120ms; }
+.stat-cards .card:nth-child(4) { animation-delay: 180ms; }
+.charts-row .card { animation: cardIn 0.5s cubic-bezier(0.4,0,0.2,1) 240ms backwards; }
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(14px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .card.stat {
@@ -227,11 +326,11 @@ h2 {
 
 .stat-body { flex: 1; min-width: 0; }
 .stat-num {
-  font-size: 26px;
-  font-weight: 700;
+  font-size: 32px;
+  font-weight: 800;
   color: var(--text);
-  line-height: 1.1;
-  letter-spacing: -0.02em;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
   font-feature-settings: "tnum";
 }
 .stat-label {
@@ -731,6 +830,9 @@ h2 {
   .stat-cards { grid-template-columns: repeat(2, 1fr); }
   .charts-row { grid-template-columns: 1fr; }
   .two-col { grid-template-columns: 1fr; }
+  .page-title { font-size: 30px; }
+  .focus-banner { flex-wrap: wrap; }
+  .focus-banner-meta { width: 100%; padding-left: 66px; }
 }
 @media (max-width: 600px) {
   .sidebar { width: 64px; padding: 16px 8px; }
