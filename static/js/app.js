@@ -17,6 +17,29 @@ function fmtMinutes(mins) {
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
 }
 
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 5)  return "Burning the midnight oil";
+  if (h < 12) return "Good morning";
+  if (h < 18) return "Good afternoon";
+  if (h < 22) return "Good evening";
+  return "Late night focus";
+}
+
+function countUp(el, target, { decimals = 0, suffix = "", duration = 700 } = {}) {
+  const startText = el.textContent.replace(/[^\d.-]/g, "");
+  const start = parseFloat(startText) || 0;
+  const startTime = performance.now();
+  function tick(now) {
+    const t = Math.min((now - startTime) / duration, 1);
+    const eased = 1 - Math.pow(1 - t, 3);
+    const value = start + (target - start) * eased;
+    el.textContent = (decimals ? value.toFixed(decimals) : Math.round(value)) + suffix;
+    if (t < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
 function today() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -69,35 +92,102 @@ async function loadDashboard() {
     .reduce((s, l) => s + l.duration_minutes, 0);
   const pending = analytics.task_stats.pending;
 
-  $("#stat-tasks-done").textContent = tasksDoneToday;
-  $("#stat-time-today").textContent = (timeToday / 60).toFixed(1) + "h";
-  $("#stat-habit-rate").textContent = analytics.habit_completion_rate + "%";
-  $("#stat-pending").textContent = pending;
+  // Hero greeting + meta
+  $("#greeting").textContent = greeting();
+  const dateStr = new Date().toLocaleDateString(undefined, {
+    weekday: "long", month: "long", day: "numeric",
+  });
+  const metaBits = [dateStr];
+  if (pending > 0) metaBits.push(`${pending} task${pending === 1 ? "" : "s"} on your plate`);
+  else metaBits.push("Inbox zero — nice");
+  $("#dashboard-meta").textContent = metaBits.join(" · ");
+
+  // Today's focus: top-priority pending task
+  renderFocusBanner(tasks);
+
+  // Animated count-up on stat numbers
+  countUp($("#stat-tasks-done"), tasksDoneToday);
+  countUp($("#stat-time-today"), timeToday / 60, { decimals: 1, suffix: "h" });
+  countUp($("#stat-habit-rate"), analytics.habit_completion_rate, { suffix: "%" });
+  countUp($("#stat-pending"), pending);
 
   renderDailyChart(analytics.daily_time);
   renderCategoryChart(analytics.time_by_category);
 }
 
+function renderFocusBanner(tasks) {
+  const pending = tasks.filter(t => !t.completed);
+  // Priority preference: urgent+important > high > medium > low
+  const score = t => {
+    let s = 0;
+    if (t.urgent && t.important) s += 100;
+    if (t.priority === "high") s += 30;
+    else if (t.priority === "medium") s += 10;
+    if (t.deadline) s += 5;
+    return s;
+  };
+  pending.sort((a, b) => score(b) - score(a));
+  const top = pending[0];
+  const taskEl = $("#focus-task");
+  const metaEl = $("#focus-meta");
+  if (!top) {
+    taskEl.textContent = "All clear — add a task to plan your day";
+    metaEl.innerHTML = "";
+    return;
+  }
+  taskEl.textContent = top.title;
+  const others = pending.length - 1;
+  metaEl.innerHTML = others > 0
+    ? `<strong>${others}</strong> more pending`
+    : "Last one standing";
+}
+
 function renderDailyChart(data) {
-  const ctx = $("#chart-daily").getContext("2d");
+  const canvas = $("#chart-daily");
+  const ctx = canvas.getContext("2d");
   if (dailyChart) dailyChart.destroy();
+
+  const gradient = ctx.createLinearGradient(0, 0, 0, 240);
+  gradient.addColorStop(0, "rgba(124,117,255,0.95)");
+  gradient.addColorStop(1, "rgba(124,117,255,0.25)");
+  const hoverGradient = ctx.createLinearGradient(0, 0, 0, 240);
+  hoverGradient.addColorStop(0, "rgba(157,151,255,1)");
+  hoverGradient.addColorStop(1, "rgba(56,189,248,0.4)");
+
   dailyChart = new Chart(ctx, {
     type: "bar",
     data: {
-      labels: data.map(d => new Date(d.date + "T12:00:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })),
+      labels: data.map(d => new Date(d.date + "T12:00:00").toLocaleDateString(undefined, { weekday: "short", day: "numeric" })),
       datasets: [{
         label: "Minutes",
         data: data.map(d => d.total),
-        backgroundColor: "rgba(108,99,255,0.7)",
-        borderRadius: 6,
+        backgroundColor: gradient,
+        hoverBackgroundColor: hoverGradient,
+        borderRadius: 8,
+        borderSkipped: false,
+        maxBarThickness: 48,
       }],
     },
     options: {
       responsive: true,
-      plugins: { legend: { display: false } },
+      animation: { duration: 700, easing: "easeOutCubic" },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: "rgba(31,35,51,0.95)",
+          borderColor: "rgba(124,117,255,0.4)",
+          borderWidth: 1,
+          titleColor: "#e6e9f2",
+          bodyColor: "#e6e9f2",
+          padding: 10,
+          cornerRadius: 8,
+          displayColors: false,
+          callbacks: { label: ctx => `${ctx.parsed.y} min` },
+        },
+      },
       scales: {
-        x: { ticks: { color: "#7c8499" }, grid: { color: "#2e3347" } },
-        y: { ticks: { color: "#7c8499" }, grid: { color: "#2e3347" }, beginAtZero: true },
+        x: { ticks: { color: "#828aa1", font: { size: 11 } }, grid: { display: false } },
+        y: { ticks: { color: "#828aa1", font: { size: 11 } }, grid: { color: "rgba(42,47,67,0.6)" }, beginAtZero: true, border: { display: false } },
       },
     },
   });
@@ -107,7 +197,7 @@ function renderCategoryChart(data) {
   const ctx = $("#chart-category").getContext("2d");
   if (categoryChart) categoryChart.destroy();
   if (!data.length) return;
-  const colors = ["#6c63ff","#22c55e","#f59e0b","#ef4444","#38bdf8","#e879f9"];
+  const colors = ["#7c75ff", "#22c55e", "#f59e0b", "#ef4444", "#38bdf8", "#e879f9"];
   categoryChart = new Chart(ctx, {
     type: "doughnut",
     data: {
@@ -115,13 +205,35 @@ function renderCategoryChart(data) {
       datasets: [{
         data: data.map(d => d.total),
         backgroundColor: colors.slice(0, data.length),
-        borderWidth: 0,
+        borderColor: "#161925",
+        borderWidth: 3,
+        hoverOffset: 8,
       }],
     },
     options: {
       responsive: true,
+      cutout: "65%",
+      animation: { animateRotate: true, duration: 700 },
       plugins: {
-        legend: { position: "bottom", labels: { color: "#e2e8f0", boxWidth: 12, padding: 16 } },
+        legend: {
+          position: "bottom",
+          labels: {
+            color: "#e6e9f2",
+            boxWidth: 10,
+            boxHeight: 10,
+            padding: 14,
+            usePointStyle: true,
+            font: { size: 12, weight: "500" },
+          },
+        },
+        tooltip: {
+          backgroundColor: "rgba(31,35,51,0.95)",
+          borderColor: "rgba(124,117,255,0.4)",
+          borderWidth: 1,
+          padding: 10,
+          cornerRadius: 8,
+          callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed} min` },
+        },
       },
     },
   });

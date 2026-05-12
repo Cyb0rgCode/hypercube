@@ -37,7 +37,27 @@
 
     <!-- DASHBOARD -->
     <section id="tab-dashboard" class="tab active">
-      <h1>Dashboard</h1>
+      <header class="page-header">
+        <h1 class="page-title" id="greeting">Hello</h1>
+        <p class="page-subtitle" id="dashboard-meta">Loading your day…</p>
+      </header>
+
+      <div class="focus-banner card" id="focus-banner">
+        <div class="focus-banner-glow"></div>
+        <div class="focus-banner-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <circle cx="12" cy="12" r="6"/>
+            <circle cx="12" cy="12" r="2" fill="currentColor"/>
+          </svg>
+        </div>
+        <div class="focus-banner-content">
+          <div class="focus-banner-label">Today's focus</div>
+          <div class="focus-banner-task" id="focus-task">Add a task to get started</div>
+        </div>
+        <div class="focus-banner-meta" id="focus-meta"></div>
+      </div>
+
       <div class="stat-cards" id="stat-cards">
         <div class="card stat" data-tone="green">
           <div class="stat-icon" aria-hidden="true">
