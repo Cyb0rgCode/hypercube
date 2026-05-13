@@ -19,8 +19,36 @@ def get_tasks():
     rows = conn.execute(
         "SELECT * FROM tasks ORDER BY completed ASC, priority DESC, created_at DESC"
     ).fetchall()
+    tasks = []
+    for row in rows:
+        task = dict(row)
+        task["time_logged"] = conn.execute(
+            "SELECT COALESCE(SUM(duration_minutes), 0) FROM task_logs WHERE task_id = ?",
+            (task["id"],),
+        ).fetchone()[0]
+        tasks.append(task)
     conn.close()
-    return jsonify([dict(r) for r in rows])
+    return jsonify(tasks)
+
+
+@app.route("/api/tasks/<int:task_id>/log", methods=["POST"])
+def log_task_time(task_id):
+    minutes = int(request.json.get("minutes", 0))
+    if minutes <= 0:
+        return jsonify({"error": "minutes must be positive"}), 400
+    conn = get_db()
+    conn.execute(
+        "INSERT INTO task_logs (task_id, duration_minutes) VALUES (?, ?)",
+        (task_id, minutes),
+    )
+    conn.commit()
+    task = dict(conn.execute("SELECT * FROM tasks WHERE id = ?", (task_id,)).fetchone())
+    task["time_logged"] = conn.execute(
+        "SELECT COALESCE(SUM(duration_minutes), 0) FROM task_logs WHERE task_id = ?",
+        (task_id,),
+    ).fetchone()[0]
+    conn.close()
+    return jsonify(task)
 
 
 @app.route("/api/tasks", methods=["POST"])

@@ -57,6 +57,14 @@ def init_db():
             deadline TEXT,
             created_at TEXT NOT NULL DEFAULT (date('now'))
         );
+
+        CREATE TABLE IF NOT EXISTS task_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            task_id INTEGER NOT NULL,
+            duration_minutes INTEGER NOT NULL,
+            logged_at TEXT NOT NULL DEFAULT (date('now')),
+            FOREIGN KEY (task_id) REFERENCES tasks(id)
+        );
     """)
     conn.commit()
 
