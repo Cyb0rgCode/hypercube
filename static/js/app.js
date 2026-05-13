@@ -108,6 +108,76 @@ async function loadDashboard() {
 
   renderDailyChart(analytics.daily_time);
   renderPriorityChart(analytics.time_by_category);
+  loadForecast();
+}
+
+async function loadForecast() {
+  const titleEl = $("#chart-daily").closest(".chart-card").querySelector("h2");
+  const badge = document.createElement("span");
+  badge.className = "forecast-badge loading";
+  badge.textContent = "Loading forecast…";
+  titleEl.appendChild(badge);
+
+  try {
+    const data = await api("/api/forecast");
+    badge.remove();
+    if (data.forecast && data.forecast.length) {
+      overlayForecast(data.forecast);
+    }
+  } catch (_) {
+    badge.textContent = "Forecast unavailable";
+    badge.classList.add("error");
+  }
+}
+
+function overlayForecast(forecastData) {
+  if (!dailyChart) return;
+
+  const newLabels = forecastData.map(f =>
+    new Date(f.date + "T12:00:00").toLocaleDateString(undefined, { weekday: "short", day: "numeric" })
+  );
+  const newValues = forecastData.map(f => f.value);
+  const histLen = dailyChart.data.labels.length;
+
+  // Extend labels and pad existing bar dataset with nulls
+  dailyChart.data.labels = [...dailyChart.data.labels, ...newLabels];
+  dailyChart.data.datasets[0].data = [
+    ...dailyChart.data.datasets[0].data,
+    ...Array(7).fill(null),
+  ];
+
+  // Bridge point: connect last historical bar to forecast line
+  const lastVal = dailyChart.data.datasets[0].data[histLen - 1] ?? 0;
+  const lineData = [
+    ...Array(histLen - 1).fill(null),
+    lastVal,
+    ...newValues,
+  ];
+
+  dailyChart.data.datasets.push({
+    type: "line",
+    label: "Forecast",
+    data: lineData,
+    borderColor: "rgba(56,189,248,0.9)",
+    backgroundColor: "rgba(56,189,248,0.08)",
+    borderWidth: 2,
+    borderDash: [6, 4],
+    pointRadius: 4,
+    pointBackgroundColor: "rgba(56,189,248,1)",
+    pointBorderColor: "#161925",
+    pointBorderWidth: 2,
+    tension: 0.35,
+    fill: false,
+  });
+
+  dailyChart.update();
+
+  // Update chart title
+  const titleEl = $("#chart-daily").closest(".chart-card").querySelector("h2");
+  const badge = document.createElement("span");
+  badge.className = "forecast-badge";
+  badge.textContent = "7d forecast";
+  titleEl.appendChild(badge);
 }
 
 function renderDailyChart(data) {
