@@ -319,28 +319,46 @@ function renderTasks() {
     return;
   }
 
-  list.innerHTML = tasks.map(t => {
-    const urgCls = t.urgent && t.important ? " li-both"
-      : t.important ? " li-important"
-      : t.urgent   ? " li-urgent"
-      : "";
-    return `
-    <li class="${t.completed ? "done" : ""}${selectedIds.has(t.id) ? " selected" : ""}${urgCls}" data-id="${t.id}">
-      <button class="habit-check ${t.completed ? "done" : ""}" data-action="toggle" title="Toggle complete">
-        ${t.completed ? "✓" : ""}
-      </button>
-      <span class="item-title">${escHtml(t.title)}</span>
-      ${t.category ? `<span class="tag-category">${escHtml(t.category)}</span>` : ""}
-      ${t.urgent ? '<span class="tag-urgent">! urgent</span>' : ""}
-      ${t.important ? '<span class="tag-important">★ key</span>' : ""}
-      <span class="badge badge-${t.priority}">${t.priority}</span>
-      ${t.deadline ? `<span class="item-meta">${t.deadline}</span>` : ""}
-      ${t.estimated_minutes ? `<span class="estimate-badge">~${fmtTime(t.estimated_minutes)}</span>` : ""}
-      ${t.time_logged ? `<span class="time-badge">⏱ ${fmtTime(t.time_logged)}</span>` : ""}
-      <input class="log-mins-inline" type="number" placeholder="log min" min="1" max="999" title="Type minutes and press Enter" />
-      <button class="btn-icon" data-action="delete" title="Delete">✕</button>
+  // Group by category
+  const groups = {};
+  tasks.forEach(t => {
+    const key = t.category || "Other";
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(t);
+  });
+  const sortedKeys = Object.keys(groups).sort((a, b) =>
+    a === "Other" ? 1 : b === "Other" ? -1 : a.localeCompare(b)
+  );
+
+  let html = "";
+  for (const cat of sortedKeys) {
+    const catTasks = groups[cat];
+    const allSel = catTasks.every(t => selectedIds.has(t.id));
+    html += `<li class="category-header${allSel ? " all-selected" : ""}" data-category="${escHtml(cat)}">
+      <span class="category-header-name">${escHtml(cat)}</span>
+      <span class="category-header-count">${catTasks.length} task${catTasks.length === 1 ? "" : "s"}</span>
+      <button type="button" class="category-select-btn" data-action="select-category">${allSel ? "Deselect" : "Select all"}</button>
     </li>`;
-  }).join("");
+    catTasks.forEach(t => {
+      const urgCls = t.urgent && t.important ? " li-both"
+        : t.important ? " li-important"
+        : t.urgent    ? " li-urgent" : "";
+      html += `<li class="${t.completed ? "done" : ""}${selectedIds.has(t.id) ? " selected" : ""}${urgCls}" data-id="${t.id}">
+        <button class="habit-check ${t.completed ? "done" : ""}" data-action="toggle" title="Toggle complete">${t.completed ? "✓" : ""}</button>
+        <span class="item-title">${escHtml(t.title)}</span>
+        ${t.task_type ? `<span class="tag-type">${escHtml(t.task_type)}</span>` : ""}
+        ${t.urgent ? '<span class="tag-urgent">! urgent</span>' : ""}
+        ${t.important ? '<span class="tag-important">★ key</span>' : ""}
+        <span class="badge badge-${t.priority}">${t.priority}</span>
+        ${t.deadline ? `<span class="item-meta">${t.deadline}</span>` : ""}
+        ${t.estimated_minutes ? `<span class="estimate-badge">~${fmtTime(t.estimated_minutes)}</span>` : ""}
+        ${t.time_logged ? `<span class="time-badge">⏱ ${fmtTime(t.time_logged)}</span>` : ""}
+        <input class="log-mins-inline" type="number" placeholder="log min" min="1" max="999" title="Type minutes and press Enter" />
+        <button class="btn-icon" data-action="delete" title="Delete">✕</button>
+      </li>`;
+    });
+  }
+  list.innerHTML = html;
   updateBatchBar();
 }
 
@@ -381,10 +399,24 @@ $("#task-form").addEventListener("submit", async e => {
 });
 
 $("#task-list").addEventListener("click", async e => {
-  const li = e.target.closest("li");
+  const action = e.target.dataset.action || e.target.closest("[data-action]")?.dataset.action;
+
+  if (action === "select-category") {
+    const header = e.target.closest(".category-header");
+    const cat = header?.dataset.category;
+    if (!cat) return;
+    let catTasks = allTasks.filter(t => (t.category || "Other") === cat);
+    if (taskFilter === "pending") catTasks = catTasks.filter(t => !t.completed);
+    if (taskFilter === "done")    catTasks = catTasks.filter(t => t.completed);
+    const allSel = catTasks.length > 0 && catTasks.every(t => selectedIds.has(t.id));
+    catTasks.forEach(t => allSel ? selectedIds.delete(t.id) : selectedIds.add(t.id));
+    renderTasks();
+    return;
+  }
+
+  const li = e.target.closest("li[data-id]");
   if (!li) return;
   const id = Number(li.dataset.id);
-  const action = e.target.dataset.action || e.target.closest("[data-action]")?.dataset.action;
 
   if (action === "toggle") {
     const task = allTasks.find(t => t.id === id);
@@ -445,6 +477,7 @@ function updateBatchBar() {
     if (task) {
       $("#batch-edit-title").value = task.title;
       $("#batch-edit-category").value = task.category || "";
+      $("#batch-edit-type").value = task.task_type || "";
       $("#batch-edit-priority").value = task.priority;
       $("#batch-edit-deadline").value = task.deadline || "";
       $("#batch-edit-estimate").value = task.estimated_minutes || "";
@@ -479,12 +512,13 @@ $("#batch-save").addEventListener("click", async () => {
   const title = $("#batch-edit-title").value.trim();
   if (!title) return;
   const category          = $("#batch-edit-category").value.trim();
+  const task_type         = $("#batch-edit-type").value;
   const priority          = $("#batch-edit-priority").value;
   const deadline          = $("#batch-edit-deadline").value || null;
   const estimated_minutes = parseInt($("#batch-edit-estimate").value, 10) || 0;
   const urgent            = $("#batch-edit-urgent").getAttribute("aria-pressed") === "true";
   const important         = $("#batch-edit-important").getAttribute("aria-pressed") === "true";
-  const updated = await api(`/api/tasks/${id}`, "PUT", { title, category, priority, deadline, estimated_minutes, urgent, important });
+  const updated = await api(`/api/tasks/${id}`, "PUT", { title, category, task_type, priority, deadline, estimated_minutes, urgent, important });
   const idx = allTasks.findIndex(t => t.id === id);
   allTasks[idx] = { ...updated, time_logged: allTasks[idx].time_logged };
   selectedIds.clear();
@@ -563,32 +597,25 @@ $("#batch-delete").addEventListener("click", async () => {
 
 // ── JSON Import ────────────────────────────────────────────────────────────────
 
-const AI_PROMPT = `You are a productivity assistant. I will paste files, documents, syllabi, problem sets, schedules, or any content below. Your job is to read everything carefully and extract EVERY actionable item as a task.
+const AI_PROMPT = `You are a productivity assistant. I will paste files, documents, syllabi, problem sets, schedules, or any content below. Extract EVERY actionable item as a task.
 
-Return ONLY a valid JSON array — no markdown, no explanation, no preamble. Each task object must have exactly these fields:
+Return ONLY a valid JSON array — no markdown, no explanation. Each object must have:
 
-- "title": string — specific, actionable task name (not vague; e.g. "Solve exercises 3.1–3.8" not "Do homework")
-- "category": string — short group label derived from the content (e.g. "Exercise", "Study", "Lecture", "Assignment", "Reading", "Work", "Health", "Personal")
-- "priority": "high" | "medium" | "low" — infer from deadlines, weight, or importance in the source
-- "urgent": true | false — true if due within the next 2–3 days or marked as imminent
-- "important": true | false — true if it significantly impacts a grade, goal, or outcome
-- "deadline": "YYYY-MM-DD" | null — extract exact dates from the content; null if none mentioned
-- "estimated_minutes": number — realistic time to complete (e.g. reading: ~2 min/page, problem set: 20–40 min/problem, coding task: 45–120 min, short exercise: 20–45 min)
+- "title": string — specific task using exact names/numbers from the content (e.g. "Chapter 3 Exercises 1–8", not "Do homework")
+- "category": string — the course or subject name exactly as it appears (e.g. "Math 201", "Physics II", "CS50"). For non-class items use "Work", "Personal", "Health", etc.
+- "task_type": one of — "exercise" | "quiz" | "assignment" | "reading" | "lab" | "project" | "lecture" | "other"
+- "priority": "high" | "medium" | "low" — based on deadline proximity and grade weight
+- "urgent": false — default false; only set true if due within 48 hours or explicitly flagged urgent in the content
+- "important": false — default false; only set true if it directly affects a grade, major milestone, or stated goal
+- "deadline": "YYYY-MM-DD" | null — extract exact dates; null if none stated
+- "estimated_minutes": number — realistic completion time (reading ≈ 2 min/page, per problem ≈ 20–40 min, coding task ≈ 45–120 min, short drill ≈ 15–30 min)
 
 Rules:
-- Break large items into specific sub-tasks when possible
-- Use the actual names, numbers, and chapters from the content in the title
-- Infer category from context (a syllabus → "Study"/"Assignment", a workout plan → "Exercise", etc.)
-- estimated_minutes must always be a positive integer
+- urgent and important start at false — raise them only when the content clearly justifies it
+- Break compound items into individual tasks (one problem set = one task per section if separable)
+- estimated_minutes must be a positive integer
 
-Example output:
-[
-  {"title":"Read Chapter 4 — Dynamic Programming (pp. 87–110)","category":"Study","priority":"high","urgent":true,"important":true,"deadline":"2024-12-10","estimated_minutes":50},
-  {"title":"Solve problem set 3, questions 1–6","category":"Assignment","priority":"high","urgent":false,"important":true,"deadline":"2024-12-14","estimated_minutes":90},
-  {"title":"30-min interval run","category":"Exercise","priority":"medium","urgent":false,"important":true,"deadline":null,"estimated_minutes":35}
-]
-
-[PASTE YOUR FILES, SYLLABUS, PROBLEM SET, SCHEDULE, OR ANY CONTENT BELOW THIS LINE]
+[PASTE YOUR FILES, SYLLABUS, PROBLEM SET, SCHEDULE, OR ANY CONTENT BELOW]
 `;
 
 $("#task-import-input").addEventListener("change", async e => {
@@ -618,6 +645,7 @@ $("#task-import-input").addEventListener("change", async e => {
       const task = await api("/api/tasks", "POST", {
         title:              t.title.trim(),
         category:           t.category ? String(t.category).trim() : "",
+        task_type:          t.task_type ? String(t.task_type).trim() : "",
         priority:           ["high", "medium", "low"].includes(t.priority) ? t.priority : "medium",
         deadline:           t.deadline || null,
         urgent:             Boolean(t.urgent),
