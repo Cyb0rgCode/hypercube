@@ -432,6 +432,32 @@ h2 {
 }
 .inline-row input:focus { border-color: var(--accent); }
 
+/* ── Import row ── */
+.import-row { display: flex; gap: 10px; margin-bottom: 16px; }
+
+.import-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--surface2);
+  border: 1px dashed var(--border);
+  color: var(--muted);
+  border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.import-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+.import-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+
 /* ── Filter row ── */
 .filter-row { display: flex; gap: 8px; margin-bottom: 16px; }
 .filter-btn {
