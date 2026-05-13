@@ -432,6 +432,7 @@ h2 {
   padding: 13px 16px;
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 12px;
   box-shadow: var(--shadow-sm);
   transition: border-color 0.15s, transform 0.12s, box-shadow 0.15s;
@@ -473,6 +474,52 @@ h2 {
   line-height: 1;
 }
 .btn-icon:hover { color: var(--red); background: rgba(239,68,68,0.1); }
+
+/* ── Task time logging ── */
+.time-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-dim);
+  border: 1px solid rgba(124,117,255,0.2);
+  border-radius: 20px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+
+.log-time-btn { color: var(--muted); font-size: 13px; }
+.log-time-btn:hover { color: var(--accent); background: var(--accent-dim); }
+
+.log-time-row {
+  display: none;
+  flex-basis: 100%;
+  align-items: center;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-soft);
+  margin-top: 2px;
+}
+.log-time-row.open { display: flex; }
+
+.log-mins-input {
+  width: 90px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.log-mins-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+.log-mins-input::placeholder { color: var(--muted); }
+
+.save-log-btn:hover { color: var(--green) !important; background: rgba(34,197,94,0.1) !important; }
 
 /* ── Habits ── */
 .habit-check {
