@@ -136,7 +136,18 @@
         <span id="batch-count"></span>
         <div id="batch-edit" class="batch-actions" hidden>
           <input id="batch-edit-title" class="batch-edit-title" type="text" placeholder="Title…" />
-          <input id="batch-edit-category" class="batch-select batch-edit-category" type="text" placeholder="Category" />
+          <input id="batch-edit-category" class="batch-select batch-edit-category" type="text" placeholder="Course / Subject" />
+          <select id="batch-edit-type" class="batch-select">
+            <option value="">Type…</option>
+            <option value="exercise">Exercise</option>
+            <option value="quiz">Quiz</option>
+            <option value="assignment">Assignment</option>
+            <option value="reading">Reading</option>
+            <option value="lab">Lab</option>
+            <option value="project">Project</option>
+            <option value="lecture">Lecture</option>
+            <option value="other">Other</option>
+          </select>
           <select id="batch-edit-priority" class="batch-select">
             <option value="high">High</option>
             <option value="medium">Medium</option>
