@@ -339,6 +339,16 @@ h2 {
   font-weight: 500;
 }
 
+/* ── Charts ── */
+.charts-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-top: 4px;
+}
+.chart-card h2 { margin-top: 0; }
+.chart-card canvas { max-height: 220px; }
+
 /* ── Forms ── */
 .input-row {
   display: flex;
@@ -771,6 +781,7 @@ h2 {
 /* ── Responsive ── */
 @media (max-width: 900px) {
   .stat-cards { grid-template-columns: repeat(2, 1fr); }
+  .charts-row { grid-template-columns: 1fr; }
   .two-col { grid-template-columns: 1fr; }
   .page-title { font-size: 30px; }
   .focus-banner { flex-wrap: wrap; }

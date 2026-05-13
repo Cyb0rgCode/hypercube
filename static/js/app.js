@@ -75,6 +75,9 @@ $$(".nav-btn").forEach(btn => {
 
 // ── Dashboard ──────────────────────────────────────────────────────────────────
 
+let dailyChart = null;
+let priorityChart = null;
+
 async function loadDashboard() {
   const [analytics, tasks] = await Promise.all([
     api("/api/analytics"),
@@ -102,6 +105,99 @@ async function loadDashboard() {
   countUp($("#stat-tasks-done"), tasksDoneToday);
   countUp($("#stat-habit-rate"), analytics.habit_completion_rate, { suffix: "%" });
   countUp($("#stat-pending"), pending);
+
+  renderDailyChart(analytics.daily_time);
+  renderPriorityChart(analytics.time_by_category);
+}
+
+function renderDailyChart(data) {
+  const canvas = $("#chart-daily");
+  const ctx = canvas.getContext("2d");
+  if (dailyChart) dailyChart.destroy();
+
+  const gradient = ctx.createLinearGradient(0, 0, 0, 220);
+  gradient.addColorStop(0, "rgba(124,117,255,0.95)");
+  gradient.addColorStop(1, "rgba(124,117,255,0.2)");
+  const hoverGrad = ctx.createLinearGradient(0, 0, 0, 220);
+  hoverGrad.addColorStop(0, "rgba(157,151,255,1)");
+  hoverGrad.addColorStop(1, "rgba(56,189,248,0.4)");
+
+  dailyChart = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: data.map(d => new Date(d.date + "T12:00:00").toLocaleDateString(undefined, { weekday: "short", day: "numeric" })),
+      datasets: [{
+        data: data.map(d => d.total),
+        backgroundColor: gradient,
+        hoverBackgroundColor: hoverGrad,
+        borderRadius: 8,
+        borderSkipped: false,
+        maxBarThickness: 48,
+      }],
+    },
+    options: {
+      responsive: true,
+      animation: { duration: 600, easing: "easeOutCubic" },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: "rgba(31,35,51,0.95)",
+          borderColor: "rgba(124,117,255,0.4)",
+          borderWidth: 1,
+          titleColor: "#e6e9f2",
+          bodyColor: "#e6e9f2",
+          padding: 10,
+          cornerRadius: 8,
+          displayColors: false,
+          callbacks: { label: c => fmtTime(c.parsed.y) || "0m" },
+        },
+      },
+      scales: {
+        x: { ticks: { color: "#828aa1", font: { size: 11 } }, grid: { display: false } },
+        y: { ticks: { color: "#828aa1", font: { size: 11 } }, grid: { color: "rgba(42,47,67,0.6)" }, beginAtZero: true, border: { display: false } },
+      },
+    },
+  });
+}
+
+function renderPriorityChart(data) {
+  const ctx = $("#chart-priority").getContext("2d");
+  if (priorityChart) priorityChart.destroy();
+  if (!data.length) return;
+  const colorMap = { high: "#ef4444", medium: "#f59e0b", low: "#22c55e" };
+  const colors = data.map(d => colorMap[d.category] || "#7c75ff");
+  priorityChart = new Chart(ctx, {
+    type: "doughnut",
+    data: {
+      labels: data.map(d => d.category.charAt(0).toUpperCase() + d.category.slice(1)),
+      datasets: [{
+        data: data.map(d => d.total),
+        backgroundColor: colors,
+        borderColor: "#161925",
+        borderWidth: 3,
+        hoverOffset: 8,
+      }],
+    },
+    options: {
+      responsive: true,
+      cutout: "65%",
+      animation: { animateRotate: true, duration: 600 },
+      plugins: {
+        legend: {
+          position: "bottom",
+          labels: { color: "#e6e9f2", boxWidth: 10, boxHeight: 10, padding: 14, usePointStyle: true, font: { size: 12, weight: "500" } },
+        },
+        tooltip: {
+          backgroundColor: "rgba(31,35,51,0.95)",
+          borderColor: "rgba(124,117,255,0.4)",
+          borderWidth: 1,
+          padding: 10,
+          cornerRadius: 8,
+          callbacks: { label: c => ` ${c.label}: ${fmtTime(c.parsed)}` },
+        },
+      },
+    },
+  });
 }
 
 function renderFocusBanner(tasks) {

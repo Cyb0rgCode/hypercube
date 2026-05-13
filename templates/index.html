@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/static/css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
   <aside class="sidebar">
@@ -91,6 +92,16 @@
             <div class="stat-num" id="stat-pending">—</div>
             <div class="stat-label">Open Tasks</div>
           </div>
+        </div>
+      </div>
+      <div class="charts-row">
+        <div class="card chart-card">
+          <h2>Time Logged Per Day (last 7 days)</h2>
+          <canvas id="chart-daily"></canvas>
+        </div>
+        <div class="card chart-card">
+          <h2>Time by Priority (last 7 days)</h2>
+          <canvas id="chart-priority"></canvas>
         </div>
       </div>
     </section>
