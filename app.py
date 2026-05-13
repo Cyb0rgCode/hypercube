@@ -305,6 +305,43 @@ def analytics():
     })
 
 
+# ── Forecast ───────────────────────────────────────────────────────────────────
+
+@app.route("/api/forecast")
+def get_forecast():
+    conn = get_db()
+    today = date.today()
+    since = str(today - timedelta(days=59))  # 60 days of context
+
+    rows = conn.execute(
+        """SELECT logged_at AS date, SUM(duration_minutes) AS total
+           FROM task_logs WHERE logged_at >= ?
+           GROUP BY logged_at ORDER BY logged_at ASC""",
+        (since,),
+    ).fetchall()
+    conn.close()
+
+    daily_map = {r["date"]: float(r["total"]) for r in rows}
+    historical = [
+        daily_map.get(str(today - timedelta(days=59 - i)), 0.0)
+        for i in range(60)
+    ]
+
+    try:
+        from predictor import forecast as run_forecast
+        predictions = run_forecast(historical, horizon=7)
+    except Exception as exc:
+        return jsonify({"error": str(exc), "forecast": []}), 200
+
+    future_dates = [str(today + timedelta(days=i + 1)) for i in range(7)]
+    return jsonify({
+        "forecast": [
+            {"date": d, "value": round(v, 1)}
+            for d, v in zip(future_dates, predictions)
+        ]
+    })
+
+
 if __name__ == "__main__":
     init_db()
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=5000, threaded=True)

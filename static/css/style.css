@@ -346,8 +346,30 @@ h2 {
   gap: 20px;
   margin-top: 4px;
 }
-.chart-card h2 { margin-top: 0; }
+.chart-card h2 { margin-top: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .chart-card canvas { max-height: 220px; }
+
+.forecast-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 9px;
+  border-radius: 20px;
+  border: 1px solid rgba(56,189,248,0.25);
+  background: rgba(56,189,248,0.1);
+  color: var(--cyan);
+  white-space: nowrap;
+}
+.forecast-badge.loading {
+  color: var(--muted);
+  background: var(--surface2);
+  border-color: var(--border);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+.forecast-badge.error { color: var(--red); background: var(--red-dim); border-color: rgba(239,68,68,0.25); }
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
 
 /* ── Forms ── */
 .input-row {
