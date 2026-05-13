@@ -249,29 +249,30 @@ def analytics():
     conn = get_db()
     today = date.today()
 
-    # Time by category over last 7 days
     since = str(today - timedelta(days=6))
-    time_by_category = conn.execute(
-        """SELECT category, SUM(duration_minutes) as total
-           FROM time_logs WHERE log_date >= ?
-           GROUP BY category ORDER BY total DESC""",
-        (since,),
-    ).fetchall()
 
-    # Daily time totals over last 7 days
+    # Daily time totals from task logs over last 7 days
     daily_time = conn.execute(
-        """SELECT log_date, SUM(duration_minutes) as total
-           FROM time_logs WHERE log_date >= ?
-           GROUP BY log_date ORDER BY log_date ASC""",
+        """SELECT logged_at as date, SUM(duration_minutes) as total
+           FROM task_logs WHERE logged_at >= ?
+           GROUP BY logged_at ORDER BY logged_at ASC""",
         (since,),
     ).fetchall()
-
-    # Fill in missing days with 0
-    daily_map = {r["log_date"]: r["total"] for r in daily_time}
+    daily_map = {r["date"]: r["total"] for r in daily_time}
     daily_filled = []
     for i in range(7):
         d = str(today - timedelta(days=6 - i))
         daily_filled.append({"date": d, "total": daily_map.get(d, 0)})
+
+    # Time by task priority over last 7 days
+    time_by_category = conn.execute(
+        """SELECT t.priority as category, SUM(tl.duration_minutes) as total
+           FROM task_logs tl
+           JOIN tasks t ON tl.task_id = t.id
+           WHERE tl.logged_at >= ?
+           GROUP BY t.priority ORDER BY total DESC""",
+        (since,),
+    ).fetchall()
 
     # Task completion stats
     task_stats = conn.execute(
