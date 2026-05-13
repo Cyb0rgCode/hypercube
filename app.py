@@ -84,6 +84,8 @@ def update_task(task_id):
         conn.execute("UPDATE tasks SET urgent = ? WHERE id = ?", (int(bool(data["urgent"])), task_id))
     if "important" in data:
         conn.execute("UPDATE tasks SET important = ? WHERE id = ?", (int(bool(data["important"])), task_id))
+    if "deadline" in data:
+        conn.execute("UPDATE tasks SET deadline = ? WHERE id = ?", (data.get("deadline"), task_id))
     conn.commit()
     row = conn.execute("SELECT * FROM tasks WHERE id = ?", (task_id,)).fetchone()
     conn.close()

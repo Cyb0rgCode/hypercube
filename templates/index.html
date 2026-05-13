@@ -132,6 +132,22 @@
           Copy AI Prompt
         </button>
       </div>
+      <div id="batch-bar" class="batch-bar" hidden>
+        <span id="batch-count"></span>
+        <div class="batch-actions">
+          <select id="batch-priority" class="batch-select">
+            <option value="">Priority…</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+          <button type="button" id="batch-urgent" class="batch-btn">Urgent</button>
+          <button type="button" id="batch-important" class="batch-btn">Important</button>
+          <button type="button" id="batch-done" class="batch-btn">Mark done</button>
+          <button type="button" id="batch-delete" class="batch-btn danger">Delete</button>
+        </div>
+        <button type="button" id="batch-clear" class="btn-icon" title="Clear selection">✕</button>
+      </div>
       <div class="filter-row">
         <button class="filter-btn active" data-filter="all">All</button>
         <button class="filter-btn" data-filter="pending">Pending</button>
