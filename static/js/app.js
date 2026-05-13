@@ -325,15 +325,10 @@ function renderTasks() {
       </button>
       <span class="item-title">${escHtml(t.title)}</span>
       <span class="badge badge-${t.priority}">${t.priority}</span>
-      ${t.time_logged ? `<span class="time-badge">⏱ ${fmtTime(t.time_logged)}</span>` : ""}
       ${t.deadline ? `<span class="item-meta">${t.deadline}</span>` : ""}
-      <button class="btn-icon log-time-btn" data-action="log-time" title="Log time">+⏱</button>
+      ${t.time_logged ? `<span class="time-badge">⏱ ${fmtTime(t.time_logged)}</span>` : ""}
+      <input class="log-mins-inline" type="number" placeholder="log min" min="1" max="999" title="Type minutes and press Enter" />
       <button class="btn-icon" data-action="delete" title="Delete">✕</button>
-      <div class="log-time-row">
-        <input class="log-mins-input" type="number" placeholder="minutes" min="1" max="999" />
-        <button class="btn-icon save-log-btn" data-action="save-log" title="Save">✓</button>
-        <button class="btn-icon" data-action="cancel-log" title="Cancel">✕</button>
-      </div>
     </li>
   `).join("");
 }
@@ -393,29 +388,20 @@ $("#task-list").addEventListener("click", async e => {
     renderTasks();
     toast("Task deleted");
   }
-  if (action === "log-time") {
-    const row = li.querySelector(".log-time-row");
-    row.classList.toggle("open");
-    if (row.classList.contains("open")) row.querySelector(".log-mins-input").focus();
-  }
-  if (action === "cancel-log") {
-    li.querySelector(".log-time-row").classList.remove("open");
-  }
-  if (action === "save-log") {
-    const input = li.querySelector(".log-mins-input");
-    const mins = parseInt(input.value, 10);
-    if (!mins || mins < 1) return;
-    const updated = await api(`/api/tasks/${id}/log`, "POST", { minutes: mins });
-    const idx = allTasks.findIndex(t => t.id === id);
-    allTasks[idx] = updated;
-    renderTasks();
-    toast(`Logged ${fmtTime(mins)}`);
-  }
 });
 
-$("#task-list").addEventListener("keydown", e => {
-  if (e.key !== "Enter" || !e.target.classList.contains("log-mins-input")) return;
-  e.target.closest("li").querySelector("[data-action='save-log']").click();
+$("#task-list").addEventListener("keydown", async e => {
+  if (e.key !== "Enter" || !e.target.classList.contains("log-mins-inline")) return;
+  const li = e.target.closest("li");
+  const id = Number(li.dataset.id);
+  const mins = parseInt(e.target.value, 10);
+  if (!mins || mins < 1) return;
+  e.target.value = "";
+  const updated = await api(`/api/tasks/${id}/log`, "POST", { minutes: mins });
+  const idx = allTasks.findIndex(t => t.id === id);
+  allTasks[idx] = updated;
+  renderTasks();
+  toast(`Logged ${fmtTime(mins)}`);
 });
 
 $$(".filter-btn").forEach(btn => {
