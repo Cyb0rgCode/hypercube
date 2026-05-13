@@ -608,6 +608,53 @@ $("#copy-prompt-btn").addEventListener("click", async () => {
   }
 });
 
+// ── Drag-to-select (right-click drag) ─────────────────────────────────────────
+
+let isDragSelecting = false;
+let dragSelectMode = null; // "select" | "deselect"
+
+document.addEventListener("mousedown", e => {
+  if (e.button !== 2) return;
+  const li = e.target.closest("#task-list li[data-id]");
+  if (!li || e.target.closest("button, input, select")) return;
+  e.preventDefault();
+  isDragSelecting = true;
+  document.body.classList.add("drag-selecting");
+  const id = Number(li.dataset.id);
+  dragSelectMode = selectedIds.has(id) ? "deselect" : "select";
+  applyDragSelect(li, id);
+});
+
+document.addEventListener("mouseover", e => {
+  if (!isDragSelecting) return;
+  const li = e.target.closest("#task-list li[data-id]");
+  if (!li) return;
+  applyDragSelect(li, Number(li.dataset.id));
+});
+
+document.addEventListener("mouseup", e => {
+  if (e.button !== 2 || !isDragSelecting) return;
+  isDragSelecting = false;
+  dragSelectMode = null;
+  document.body.classList.remove("drag-selecting");
+});
+
+document.addEventListener("contextmenu", e => {
+  if (e.target.closest("#task-list")) e.preventDefault();
+});
+
+function applyDragSelect(li, id) {
+  const cb = li.querySelector(".task-checkbox");
+  if (dragSelectMode === "select") {
+    selectedIds.add(id);
+    if (cb) cb.checked = true;
+  } else {
+    selectedIds.delete(id);
+    if (cb) cb.checked = false;
+  }
+  updateBatchBar();
+}
+
 // ── Habits ─────────────────────────────────────────────────────────────────────
 
 async function loadHabits() {

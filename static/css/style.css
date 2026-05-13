@@ -534,6 +534,10 @@ h2 {
 }
 .btn-icon:hover { color: var(--red); background: rgba(239,68,68,0.1); }
 
+/* ── Drag-to-select ── */
+body.drag-selecting { user-select: none; }
+body.drag-selecting * { cursor: crosshair !important; }
+
 /* ── Task checkboxes ── */
 .task-checkbox {
   width: 15px;
