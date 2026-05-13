@@ -427,6 +427,72 @@ $$(".filter-btn").forEach(btn => {
   });
 });
 
+// ── JSON Import ────────────────────────────────────────────────────────────────
+
+const AI_PROMPT = `Generate a JSON task list for a productivity app. Return ONLY a valid JSON array — no markdown, no explanation — where each object has:
+- "title": string (required) — clear, actionable task name
+- "priority": "high" | "medium" | "low" (required)
+- "urgent": true | false — needs attention today or immediately
+- "important": true | false — high impact on goals or values
+- "deadline": "YYYY-MM-DD" | null — due date if applicable
+
+Example output:
+[
+  {"title":"Finish quarterly report","priority":"high","urgent":true,"important":true,"deadline":"2024-12-31"},
+  {"title":"Buy groceries","priority":"medium","urgent":true,"important":false,"deadline":null},
+  {"title":"Read design book","priority":"low","urgent":false,"important":true,"deadline":null}
+]
+
+Now generate tasks for: [DESCRIBE YOUR GOAL OR PROJECT HERE]`;
+
+$("#task-import-input").addEventListener("change", async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  e.target.value = "";
+  let data;
+  try {
+    const text = await file.text();
+    data = JSON.parse(text);
+  } catch {
+    toast("Invalid JSON file", "error");
+    return;
+  }
+  if (!Array.isArray(data) || !data.length) {
+    toast("JSON must be an array of tasks", "error");
+    return;
+  }
+  const valid = data.filter(t => t && typeof t.title === "string" && t.title.trim());
+  if (!valid.length) {
+    toast("No valid tasks found (each needs a title)", "error");
+    return;
+  }
+  let added = 0;
+  for (const t of valid) {
+    try {
+      const task = await api("/api/tasks", "POST", {
+        title:     t.title.trim(),
+        priority:  ["high", "medium", "low"].includes(t.priority) ? t.priority : "medium",
+        deadline:  t.deadline || null,
+        urgent:    Boolean(t.urgent),
+        important: Boolean(t.important),
+      });
+      allTasks.unshift(task);
+      added++;
+    } catch (_) {}
+  }
+  renderTasks();
+  toast(`Imported ${added} task${added === 1 ? "" : "s"}`, added ? "success" : "error");
+});
+
+$("#copy-prompt-btn").addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText(AI_PROMPT);
+    toast("Prompt copied — paste it into any AI chat");
+  } catch {
+    toast("Copy failed — check browser permissions", "error");
+  }
+});
+
 // ── Habits ─────────────────────────────────────────────────────────────────────
 
 async function loadHabits() {
