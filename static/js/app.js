@@ -315,7 +315,19 @@ function renderTasks() {
   if (taskFilter === "done") tasks = tasks.filter(t => t.completed);
 
   if (!tasks.length) {
-    list.innerHTML = '<li style="color:var(--muted);justify-content:center;">No tasks here</li>';
+    const hint = taskFilter === "done"    ? "Complete tasks will appear here."
+              : taskFilter === "pending"  ? "All caught up — no pending tasks."
+              :                              "Add a task above or import a JSON list to get started.";
+    list.innerHTML = `<li class="empty-state">
+      <div class="empty-state-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 11l3 3L22 4"/>
+          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+        </svg>
+      </div>
+      <div class="empty-state-title">${taskFilter === "done" ? "Nothing done yet" : taskFilter === "pending" ? "Inbox zero" : "No tasks yet"}</div>
+      <div class="empty-state-hint">${hint}</div>
+    </li>`;
     updateBatchBar();
     return;
   }
@@ -836,7 +848,16 @@ async function loadHabits() {
   const habits = await api("/api/habits");
   const list = $("#habit-list");
   if (!habits.length) {
-    list.innerHTML = '<li style="color:var(--muted);justify-content:center;">No habits yet</li>';
+    list.innerHTML = `<li class="empty-state">
+      <div class="empty-state-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
+      </div>
+      <div class="empty-state-title">No habits yet</div>
+      <div class="empty-state-hint">Track daily routines that build streaks over time.</div>
+    </li>`;
     return;
   }
   list.innerHTML = habits.map(h => `
@@ -882,7 +903,17 @@ async function loadGoals() {
   const goals = await api("/api/goals");
   const list = $("#goal-list");
   if (!goals.length) {
-    list.innerHTML = '<li style="color:var(--muted);justify-content:center;">No goals yet</li>';
+    list.innerHTML = `<li class="empty-state">
+      <div class="empty-state-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <circle cx="12" cy="12" r="6"/>
+          <circle cx="12" cy="12" r="2" fill="currentColor"/>
+        </svg>
+      </div>
+      <div class="empty-state-title">No goals yet</div>
+      <div class="empty-state-hint">Set a measurable target — like reading 12 books or running 100 km.</div>
+    </li>`;
     return;
   }
   list.innerHTML = goals.map(g => {
