@@ -152,7 +152,10 @@
 
     <!-- TASKS -->
     <section id="tab-tasks" class="tab">
-      <h1>Tasks</h1>
+      <header class="page-header">
+        <h1 class="page-title">Tasks</h1>
+        <p class="page-subtitle" id="tasks-meta">Loading…</p>
+      </header>
       <form id="task-form" class="input-row">
         <input id="task-title" type="text" placeholder="New task…" required />
         <select id="task-priority">
@@ -191,6 +194,7 @@
         <button type="button" id="batch-clear" class="btn-icon" title="Clear selection">✕</button>
       </div>
       <div class="filter-row">
+        <span class="filter-indicator" aria-hidden="true"></span>
         <button class="filter-btn active" data-filter="all">All</button>
         <button class="filter-btn" data-filter="pending">Pending</button>
         <button class="filter-btn" data-filter="done">Done</button>
