@@ -1113,6 +1113,9 @@ body.drag-selecting * { cursor: crosshair !important; }
 /* ── Two-col layout ── */
 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
 
+/* Habits & Goals segmented switcher: hidden on desktop (both panes visible) */
+.habits-section-tabs { display: none; }
+
 /* ── Toggle buttons (urgent / important) ── */
 .toggle-btn {
   background: var(--surface2);
@@ -1481,6 +1484,14 @@ button[type="submit"]:active,
   /* Goal items: tighter padding on mobile */
   .item-list li.goal-item { padding: 12px 14px; gap: 8px; }
   .goal-edit-inline .goal-input-inline { width: 56px; font-size: 13px; }
+
+  /* ── Habits & Goals: single-pane segmented layout (matches Tasks page) ── */
+  .habits-section-tabs { display: inline-flex; }
+  /* Only the active pane is visible — same UX pattern as the Tasks filter */
+  #tab-habits .habits-pane { display: none; }
+  #tab-habits .habits-pane.active { display: block; }
+  /* The segmented switcher labels replace the per-section h2 on mobile */
+  #tab-habits .habits-pane h2 { display: none; }
 
   /* ── Stat cards: single column for readability ── */
   .stat-cards { grid-template-columns: 1fr 1fr; gap: 10px; }

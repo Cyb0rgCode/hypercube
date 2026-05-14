@@ -94,7 +94,7 @@ $$(".nav-btn").forEach(btn => {
     requestAnimationFrame(() => {
       if (activeTab === "dashboard") loadDashboard();
       else if (activeTab === "tasks")  { loadTasks(); updateFilterIndicator(false); }
-      else if (activeTab === "habits") { Promise.all([loadHabits(), loadGoals()]); }
+      else if (activeTab === "habits") { Promise.all([loadHabits(), loadGoals()]); updateHabitsTabsIndicator(false); }
       else if (activeTab === "matrix") loadMatrix();
     });
   });
@@ -592,11 +592,14 @@ $("#task-list").addEventListener("keydown", async e => {
   toast(`Logged ${fmtTime(mins)}`);
 });
 
-function updateFilterIndicator(animate = true) {
-  const row = $(".filter-row");
-  const indicator = $(".filter-indicator");
-  const active = row?.querySelector(".filter-btn.active");
-  if (!row || !indicator || !active) return;
+// Generic: position a .filter-indicator pill under the .active .filter-btn
+// inside the given row. Used by both the tasks filter and the habits section
+// switcher.
+function positionFilterPill(row, animate = true) {
+  if (!row) return;
+  const indicator = row.querySelector(".filter-indicator");
+  const active = row.querySelector(".filter-btn.active");
+  if (!indicator || !active) return;
   if (!animate) indicator.style.transition = "none";
   const rowRect = row.getBoundingClientRect();
   const btnRect = active.getBoundingClientRect();
@@ -606,9 +609,17 @@ function updateFilterIndicator(animate = true) {
   if (!animate) requestAnimationFrame(() => { indicator.style.transition = ""; });
 }
 
-$$(".filter-btn").forEach(btn => {
+function updateFilterIndicator(animate = true) {
+  positionFilterPill($("#tab-tasks .filter-row"), animate);
+}
+function updateHabitsTabsIndicator(animate = true) {
+  positionFilterPill($("#tab-habits .filter-row"), animate);
+}
+
+// Tasks filter buttons (All / Pending / Done)
+$$("#tab-tasks .filter-btn").forEach(btn => {
   btn.addEventListener("click", () => {
-    $$(".filter-btn").forEach(b => b.classList.remove("active"));
+    $$("#tab-tasks .filter-btn").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
     taskFilter = btn.dataset.filter;
     updateFilterIndicator();
@@ -616,9 +627,31 @@ $$(".filter-btn").forEach(btn => {
   });
 });
 
-window.addEventListener("resize", () => updateFilterIndicator(false));
-window.addEventListener("load", () => updateFilterIndicator(false));
-requestAnimationFrame(() => updateFilterIndicator(false));
+// Habits/Goals section switcher (mobile-only visually; harmless on desktop)
+$$("#tab-habits .filter-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const section = btn.dataset.section;
+    $$("#tab-habits .filter-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    $$("#tab-habits .habits-pane").forEach(p => {
+      p.classList.toggle("active", p.dataset.pane === section);
+    });
+    updateHabitsTabsIndicator();
+  });
+});
+
+window.addEventListener("resize", () => {
+  updateFilterIndicator(false);
+  updateHabitsTabsIndicator(false);
+});
+window.addEventListener("load", () => {
+  updateFilterIndicator(false);
+  updateHabitsTabsIndicator(false);
+});
+requestAnimationFrame(() => {
+  updateFilterIndicator(false);
+  updateHabitsTabsIndicator(false);
+});
 
 // Tactile spring-bounce when a check transitions to "done"
 function bounceCheck(li) {
