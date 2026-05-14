@@ -500,6 +500,28 @@ $("#task-list").addEventListener("click", async e => {
   if (!li) return;
   const id = Number(li.dataset.id);
 
+  // The long-press handler fires a synthetic click after lifting the finger.
+  // Swallow that one click so we don't immediately deselect the item we just
+  // selected via long-press.
+  if (suppressNextTaskClick) {
+    suppressNextTaskClick = false;
+    return;
+  }
+
+  // In selection mode: tapping the row body (anywhere not on a button/input)
+  // toggles selection instead of doing the action under the cursor.
+  if (!action && selectedIds.size > 0) {
+    if (selectedIds.has(id)) {
+      selectedIds.delete(id);
+      li.classList.remove("selected");
+    } else {
+      selectedIds.add(id);
+      li.classList.add("selected");
+    }
+    updateBatchBar();
+    return;
+  }
+
   if (action === "toggle") {
     const task = allTasks.find(t => t.id === id);
     const willComplete = !task.completed;

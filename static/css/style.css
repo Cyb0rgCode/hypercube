@@ -490,6 +490,9 @@ h2 {
 .input-row button:active, button[type="submit"]:active { transform: translateY(1px); }
 
 .stacked { flex-direction: column; }
+/* Ghost wrappers — transparent in desktop flex, become rows on mobile */
+.form-row-2,
+.toggle-pair { display: contents; }
 .inline-row { display: flex; gap: 10px; flex-wrap: wrap; }
 .inline-row input { flex: 1; min-width: 100px;
   background: var(--surface2);
@@ -1460,8 +1463,9 @@ button[type="submit"]:active,
     min-width: 0 !important;
     padding: 12px 14px;
   }
-  .inline-row { flex-direction: column; gap: 8px; }
-  .inline-row input { width: 100%; }
+  /* Goal inline-row: keep horizontal, scroll if tight */
+  .inline-row { flex-direction: row; overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; gap: 8px; }
+  .inline-row input { min-width: 80px; width: auto; flex: 1; }
 
   /* ── Import row buttons ── */
   .import-row { flex-wrap: wrap; gap: 8px; }
@@ -1528,6 +1532,36 @@ button[type="submit"]:active,
 
   /* ── Cards spacing ── */
   .card { padding: 16px; }
+
+  /* ── Compact form rows: pair elements side-by-side ── */
+  .form-row-2,
+  .toggle-pair {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    width: 100%;
+  }
+  /* Each child shares space equally regardless of width: 100% from general rule */
+  .form-row-2 > *,
+  .toggle-pair > * { flex: 1; }
+  /* Toggles: tighter horizontal padding so "Urgent" + "Important" fit side by side */
+  .toggle-pair > .toggle-btn { padding: 10px 8px; }
+  /* Submit buttons: slightly less vertical padding than inputs */
+  #task-form > button[type="submit"],
+  #habit-form > button[type="submit"],
+  #goal-form > button[type="submit"] { padding: 10px 14px; }
+
+  /* ── Log-mins inline: too fiddly on touch, hide it ── */
+  .log-mins-inline { display: none !important; }
+
+  /* ── btn-icon: enforce 36 × 36 minimum touch target ── */
+  .btn-icon {
+    min-width: 36px;
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
 }
 
 /* ── Extra-small (older iPhone SE / narrow phones) ── */
