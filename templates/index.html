@@ -203,10 +203,16 @@
     <section id="tab-habits" class="tab">
       <header class="page-header">
         <h1 class="page-title">Habits &amp; Goals</h1>
-        <p class="page-subtitle">Build streaks. Hit targets.</p>
+        <p class="page-subtitle" id="habits-meta">Build streaks. Hit targets.</p>
       </header>
+      <!-- Mobile-only segmented switcher; hidden on desktop where both panes show -->
+      <div class="filter-row habits-section-tabs">
+        <span class="filter-indicator" aria-hidden="true"></span>
+        <button class="filter-btn active" data-section="habits">Habits</button>
+        <button class="filter-btn" data-section="goals">Goals</button>
+      </div>
       <div class="two-col">
-        <div>
+        <div class="habits-pane active" data-pane="habits">
           <h2>Daily Habits</h2>
           <form id="habit-form" class="input-row">
             <input id="habit-name" type="text" placeholder="New habit…" required />
@@ -214,7 +220,7 @@
           </form>
           <ul id="habit-list" class="item-list"></ul>
         </div>
-        <div>
+        <div class="habits-pane" data-pane="goals">
           <h2>Goals</h2>
           <form id="goal-form" class="input-row stacked">
             <input id="goal-title" type="text" placeholder="Goal title" required />
