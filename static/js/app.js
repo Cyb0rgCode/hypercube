@@ -946,6 +946,29 @@ $("#copy-prompt-btn").addEventListener("click", async () => {
   }
 });
 
+$("#export-tasks-btn").addEventListener("click", async () => {
+  try {
+    // Fetch fresh so the export captures any changes made on other devices.
+    const tasks = await api("/api/tasks");
+    if (!tasks || !tasks.length) {
+      toast("No tasks to export", "error");
+      return;
+    }
+    const blob = new Blob([JSON.stringify(tasks, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `tasks-${today()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast(`Exported ${tasks.length} task${tasks.length === 1 ? "" : "s"}`);
+  } catch {
+    toast("Export failed", "error");
+  }
+});
+
 // ── Drag-to-select (left-click hold + drag) ────────────────────────────────────
 
 let isDragSelecting = false;
