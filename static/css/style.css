@@ -1067,14 +1067,173 @@ body.drag-selecting * { cursor: crosshair !important; }
   .focus-banner { flex-wrap: wrap; }
   .focus-banner-meta { width: 100%; padding-left: 66px; }
 }
-@media (max-width: 600px) {
-  .sidebar { width: 64px; padding: 16px 8px; }
-  .logo { justify-content: center; padding: 0; }
-  .logo-text, .sidebar-date { display: none; }
-  .nav-btn { padding: 10px; justify-content: center; border-radius: 8px; border-left: none; }
-  .nav-btn.active { border-left: none; }
-  .nav-label { display: none; }
+
+/* ── Mobile (phones, iOS Safari) ── */
+@media (max-width: 720px) {
+  /* Prevent iOS Safari from auto-zooming on input focus (needs >= 16px) */
+  input, select, textarea, button {
+    font-size: 16px !important;
+  }
+
+  /* Disable tap highlight flash + double-tap zoom on interactive elements */
+  a, button, .nav-btn, .filter-btn, .toggle-btn, .batch-btn,
+  .import-btn, .btn-icon, .matrix-check, [role="button"] {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  body {
+    font-size: 15px;
+    /* Fixes iOS Safari 100vh URL bar issue */
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+    min-height: 100dvh;
+    /* Disable horizontal scroll caused by any overflowing child */
+    overflow-x: hidden;
+  }
+
+  /* ── Sidebar becomes a bottom nav bar ── */
+  .sidebar {
+    width: 100%;
+    height: auto;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    flex-direction: row;
+    padding: 8px 8px calc(8px + env(safe-area-inset-bottom)) 8px;
+    border-right: none;
+    border-top: 1px solid var(--border-soft);
+    background: rgba(18,18,26,0.92);
+  }
+  .logo, .sidebar-date { display: none; }
+  nav {
+    flex-direction: row;
+    width: 100%;
+    justify-content: space-around;
+    gap: 4px;
+  }
+  .nav-btn {
+    flex: 1;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 4px;
+    border-radius: 10px;
+    border-left: none !important;
+    text-align: center;
+    min-height: 52px;
+    justify-content: center;
+  }
+  .nav-btn.active {
+    background: var(--accent-dim);
+    border-left: none;
+  }
   .nav-icon { font-size: 18px; }
-  .content { margin-left: 64px; padding: 18px; }
-  .stat-cards { grid-template-columns: 1fr 1fr; }
+  .nav-label {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  /* ── Main content reflowed ── */
+  .content {
+    margin-left: 0;
+    padding: 16px 14px calc(80px + env(safe-area-inset-bottom)) 14px;
+    max-width: 100%;
+  }
+
+  /* ── Headings ── */
+  h1, .page-title { font-size: 24px !important; }
+  h2 { font-size: 16px; }
+  .page-subtitle { font-size: 13px; }
+
+  /* ── Stat cards: single column for readability ── */
+  .stat-cards { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat-num { font-size: 26px; }
+  .stat-label { font-size: 11px; }
+
+  /* ── Focus banner ── */
+  .focus-banner { padding: 16px; gap: 12px; }
+  .focus-banner-icon { width: 42px; height: 42px; }
+  .focus-banner-task { font-size: 15px; }
+  .focus-banner-meta { padding-left: 0; font-size: 11px; }
+
+  /* ── Chart cards ── */
+  .chart-card { padding: 16px; }
+  .chart-card canvas { max-height: 240px; }
+
+  /* ── Forms: stack everything vertically ── */
+  .input-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .input-row input,
+  .input-row select,
+  .input-row button,
+  .input-row .toggle-btn {
+    width: 100%;
+    min-width: 0 !important;
+    padding: 12px 14px;
+  }
+  .inline-row { flex-direction: column; gap: 8px; }
+  .inline-row input { width: 100%; }
+
+  /* ── Import row buttons ── */
+  .import-row { flex-wrap: wrap; gap: 8px; }
+  .import-row .import-btn { flex: 1; min-width: 140px; justify-content: center; padding: 10px 12px; }
+
+  /* ── Filter row: horizontal scroll if needed ── */
+  .filter-row {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+    padding-bottom: 4px;
+  }
+  .filter-btn { flex-shrink: 0; padding: 8px 14px; }
+
+  /* ── Batch bar: stack contents, scroll inner actions ── */
+  .batch-bar {
+    flex-wrap: wrap;
+    padding: 10px;
+    gap: 8px;
+  }
+  .batch-actions {
+    flex-direction: column;
+    width: 100%;
+    gap: 8px;
+  }
+  .batch-actions input,
+  .batch-actions select,
+  .batch-actions .batch-select,
+  .batch-actions .batch-btn,
+  .batch-actions .toggle-btn {
+    width: 100%;
+  }
+  .batch-bar > .batch-btn {
+    flex: 1;
+    min-width: 100px;
+  }
+
+  /* ── Eisenhower matrix already collapses at 700px, refine touch ── */
+  .matrix-quadrant { padding: 12px; }
+  .matrix-task-list li { padding: 10px; }
+
+  /* ── Toast: full-width near bottom but above nav ── */
+  .toast-container {
+    right: 12px;
+    left: 12px;
+    bottom: calc(72px + env(safe-area-inset-bottom));
+  }
+  .toast { max-width: 100%; }
+
+  /* ── Cards spacing ── */
+  .card { padding: 16px; }
+}
+
+/* ── Extra-small (older iPhone SE / narrow phones) ── */
+@media (max-width: 380px) {
+  .stat-cards { grid-template-columns: 1fr; }
+  .nav-label { font-size: 9px; }
+  .content { padding: 12px 10px calc(80px + env(safe-area-inset-bottom)) 10px; }
 }
