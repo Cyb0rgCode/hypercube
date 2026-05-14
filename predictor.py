@@ -1,50 +1,57 @@
-import threading
-import numpy as np
+"""Lightweight statistical forecaster.
 
-_model = None
-_model_lock = threading.Lock()
-_model_err = None
+Pure-Python (no numpy / no ML) — works on tiny CPU and the free Render tier.
 
+Method: weighted day-of-week seasonal averaging with a damped recent-trend
+bias. Suited to ~30-90 days of daily productivity data, which is what
+``/api/forecast`` passes in (last 60 days).
+"""
 
-def _load():
-    global _model, _model_err
-    try:
-        import torch
-        import timesfm
-
-        torch.set_float32_matmul_precision("high")
-        m = timesfm.TimesFM_2p5_200M_torch.from_pretrained(
-            "google/timesfm-2.5-200m-pytorch"
-        )
-        m.compile(
-            timesfm.ForecastConfig(
-                max_context=1024,
-                max_horizon=64,
-                normalize_inputs=True,
-                use_continuous_quantile_head=True,
-                force_flip_invariance=True,
-                infer_is_positive=True,
-                fix_quantile_crossing=True,
-            )
-        )
-        _model = m
-    except Exception as exc:
-        _model_err = str(exc)
-        raise
-
-
-def get_model():
-    if _model_err:
-        raise RuntimeError(_model_err)
-    if _model is None:
-        with _model_lock:
-            if _model is None:
-                _load()
-    return _model
+import math
+from datetime import date, timedelta
 
 
 def forecast(values: list, horizon: int = 7) -> list:
     """Return `horizon` predicted daily values given historical `values` (oldest first)."""
-    arr = np.array(values, dtype=np.float32)
-    point_forecast, _ = get_model().forecast(horizon=horizon, inputs=[arr])
-    return [max(0.0, float(v)) for v in point_forecast[0]]
+    n = len(values)
+    if n == 0 or sum(values) == 0:
+        return [0.0] * horizon
+
+    today = date.today()
+
+    # Recency weight: half-life of 14 days. A point 14 days old counts half
+    # as much as today, 28 days old a quarter as much, etc.
+    decay = math.log(2.0) / 14.0
+
+    # Bucket each historical value into its weekday with recency weighting.
+    dow_weighted_sum = [0.0] * 7
+    dow_weight_total = [0.0] * 7
+    for i, v in enumerate(values):
+        d = today - timedelta(days=n - 1 - i)
+        dow = d.weekday()
+        w = math.exp(-decay * (n - 1 - i))
+        dow_weighted_sum[dow] += v * w
+        dow_weight_total[dow] += w
+
+    overall_mean = sum(values) / n
+    dow_means = [
+        (dow_weighted_sum[d] / dow_weight_total[d]) if dow_weight_total[d] > 0 else overall_mean
+        for d in range(7)
+    ]
+
+    # Recent-trend bias: last 14 days vs the 14 days before that. Clipped
+    # to [0.7, 1.4] so a noisy week can't blow up the forecast.
+    if n >= 28:
+        recent = sum(values[-14:]) / 14
+        prior = sum(values[-28:-14]) / 14
+        if prior > 0:
+            trend = max(0.7, min(1.4, recent / prior))
+        else:
+            trend = 1.0
+    else:
+        trend = 1.0
+
+    return [
+        max(0.0, dow_means[(today + timedelta(days=i + 1)).weekday()] * trend)
+        for i in range(horizon)
+    ]
