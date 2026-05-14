@@ -151,14 +151,18 @@
       </header>
       <form id="task-form" class="input-row">
         <input id="task-title" type="text" placeholder="New task…" required />
-        <select id="task-priority">
-          <option value="high">High</option>
-          <option value="medium" selected>Medium</option>
-          <option value="low">Low</option>
-        </select>
-        <input id="task-deadline" type="date" title="Deadline (optional)" />
-        <button type="button" id="task-urgent" class="toggle-btn urgent" aria-pressed="false">Urgent</button>
-        <button type="button" id="task-important" class="toggle-btn important" aria-pressed="false">Important</button>
+        <div class="form-row-2">
+          <select id="task-priority">
+            <option value="high">High</option>
+            <option value="medium" selected>Medium</option>
+            <option value="low">Low</option>
+          </select>
+          <input id="task-deadline" type="date" title="Deadline (optional)" />
+        </div>
+        <div class="toggle-pair">
+          <button type="button" id="task-urgent" class="toggle-btn urgent" aria-pressed="false">Urgent</button>
+          <button type="button" id="task-important" class="toggle-btn important" aria-pressed="false">Important</button>
+        </div>
         <button type="submit">Add</button>
       </form>
       <div class="import-row">
