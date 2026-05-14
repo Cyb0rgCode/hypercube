@@ -132,6 +132,8 @@ nav { display: flex; flex-direction: column; gap: 2px; position: relative; }
     width 0.42s cubic-bezier(0.34, 1.4, 0.5, 1),
     height 0.42s cubic-bezier(0.34, 1.4, 0.5, 1),
     opacity 0.25s ease;
+  /* PERF: promote to its own GPU layer so transform/width updates skip paint */
+  will-change: transform, width, height;
 }
 
 .nav-btn {
@@ -564,6 +566,8 @@ h2 {
     transform 0.42s var(--spring),
     width 0.42s var(--spring),
     opacity 0.25s ease;
+  /* PERF: promote to its own GPU layer */
+  will-change: transform, width;
 }
 .filter-btn {
   position: relative;
@@ -598,6 +602,8 @@ h2 {
   gap: 12px;
   box-shadow: var(--shadow-sm);
   transition: border-color 0.15s, transform 0.12s, box-shadow 0.15s;
+  /* PERF: isolate paint+layout so editing one row doesn't reflow siblings */
+  contain: layout style;
 }
 .item-list li:not(.done):hover {
   border-color: var(--accent);
@@ -1379,9 +1385,11 @@ button[type="submit"]:active,
     padding: 6px;
     border: 1px solid rgba(255,255,255,0.07);
     border-radius: 26px;
-    background: rgba(18,18,26,0.62);
-    backdrop-filter: blur(28px) saturate(180%);
-    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    /* PERF: lighter blur + no saturate — saturate(180%) doubles GPU cost
+       on iOS, and 28px blur over scrolling content was the main scroll-jank source */
+    background: rgba(18,18,26,0.86);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
     box-shadow:
       0 16px 36px rgba(0,0,0,0.45),
       0 4px 14px rgba(0,0,0,0.25),
@@ -1561,6 +1569,48 @@ button[type="submit"]:active,
     display: inline-flex;
     align-items: center;
     justify-content: center;
+  }
+
+  /* ────────────────────────────────────────────────────────────────────
+     iOS PERFORMANCE FIXES
+     iOS Safari composites backdrop-filter / filter:blur on every frame
+     for animated or sticky elements. These overrides drop the worst
+     offenders while keeping the visual style mostly intact.
+     ──────────────────────────────────────────────────────────────────── */
+
+  /* Sticky category headers: drop backdrop-filter (was blur 18 + saturate 180).
+     Multiple sticky blurs in a scrolling list = scroll jank. Opaque BG is fine. */
+  .category-header {
+    background: rgba(14,14,21,0.96) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  /* Focus banner glow: drop the continuous 7s breathe animation + reduce
+     static blur. Animating transform on a filter:blur(40px) element re-rasterizes
+     a 280×280 region every frame. */
+  .focus-banner-glow {
+    animation: none !important;
+    filter: blur(18px);
+    opacity: 0.7;
+  }
+
+  /* Tab fade-in: skip the per-switch animation (one fewer composite per tap) */
+  .tab.active { animation: none; }
+
+  /* Edit-sheet backdrop: drop blur on mobile (modal already darkens enough) */
+  .edit-sheet-backdrop {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: rgba(0,0,0,0.65);
+  }
+
+  /* Body: drop background-attachment:fixed (iOS Safari scroll-jank killer).
+     The radial gradient still shows; it just scrolls with content. */
+  body {
+    background-attachment: scroll;
+    background-image: none;
+    background-color: var(--bg);
   }
 }
 
