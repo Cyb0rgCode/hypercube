@@ -83,7 +83,7 @@ $$(".nav-btn").forEach(btn => {
     $(`#tab-${activeTab}`).classList.add("active");
     updateNavIndicator();
     if (activeTab === "dashboard") loadDashboard();
-    if (activeTab === "tasks")    loadTasks();
+    if (activeTab === "tasks")    { loadTasks(); requestAnimationFrame(() => updateFilterIndicator(false)); }
     if (activeTab === "habits")   { loadHabits(); loadGoals(); }
     if (activeTab === "matrix")   loadMatrix();
   });
@@ -330,6 +330,18 @@ async function loadTasks() {
 
 function renderTasks() {
   const list = $("#task-list");
+
+  // Live page subtitle — counts reflect ALL tasks, not just the filtered set
+  const meta = $("#tasks-meta");
+  if (meta) {
+    const todayStr = today();
+    const pending  = allTasks.filter(t => !t.completed).length;
+    const doneToday = allTasks.filter(t => t.completed && t.completed_at === todayStr).length;
+    if (!allTasks.length) meta.textContent = "Nothing here yet — add a task to get started";
+    else if (pending === 0) meta.textContent = `All clear · ${allTasks.length} archived`;
+    else meta.textContent = `${pending} pending${doneToday ? ` · ${doneToday} done today` : ""}`;
+  }
+
   let tasks = allTasks;
   if (taskFilter === "pending") tasks = tasks.filter(t => !t.completed);
   if (taskFilter === "done") tasks = tasks.filter(t => t.completed);
@@ -490,10 +502,12 @@ $("#task-list").addEventListener("click", async e => {
 
   if (action === "toggle") {
     const task = allTasks.find(t => t.id === id);
+    const willComplete = !task.completed;
     const updated = await api(`/api/tasks/${id}`, "PUT", { completed: !task.completed });
     const idx = allTasks.findIndex(t => t.id === id);
     allTasks[idx] = { ...updated, time_logged: task.time_logged };
     renderTasks();
+    if (willComplete) bounceCheck($(`#task-list li[data-id="${id}"]`));
   }
   if (action === "edit") {
     openEditSheet(id);
@@ -521,14 +535,47 @@ $("#task-list").addEventListener("keydown", async e => {
   toast(`Logged ${fmtTime(mins)}`);
 });
 
+function updateFilterIndicator(animate = true) {
+  const row = $(".filter-row");
+  const indicator = $(".filter-indicator");
+  const active = row?.querySelector(".filter-btn.active");
+  if (!row || !indicator || !active) return;
+  if (!animate) indicator.style.transition = "none";
+  const rowRect = row.getBoundingClientRect();
+  const btnRect = active.getBoundingClientRect();
+  indicator.style.transform = `translateX(${btnRect.left - rowRect.left - 4}px)`;
+  indicator.style.width = `${btnRect.width}px`;
+  indicator.style.opacity = "1";
+  if (!animate) requestAnimationFrame(() => { indicator.style.transition = ""; });
+}
+
 $$(".filter-btn").forEach(btn => {
   btn.addEventListener("click", () => {
     $$(".filter-btn").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
     taskFilter = btn.dataset.filter;
+    updateFilterIndicator();
     renderTasks();
   });
 });
+
+window.addEventListener("resize", () => updateFilterIndicator(false));
+window.addEventListener("load", () => updateFilterIndicator(false));
+requestAnimationFrame(() => updateFilterIndicator(false));
+
+// Tactile spring-bounce when a check transitions to "done"
+function bounceCheck(li) {
+  const check = li?.querySelector(".habit-check");
+  if (!check) return;
+  check.animate(
+    [
+      { transform: "scale(0.7)" },
+      { transform: "scale(1.28)" },
+      { transform: "scale(1)" },
+    ],
+    { duration: 420, easing: "cubic-bezier(0.34, 1.56, 0.64, 1)" }
+  );
+}
 
 // ── Batch actions ──────────────────────────────────────────────────────────────
 
@@ -913,8 +960,9 @@ $("#habit-list").addEventListener("click", async e => {
   const id = Number(li.dataset.id);
   const action = e.target.dataset.action || e.target.closest("[data-action]")?.dataset.action;
   if (action === "toggle") {
-    await api(`/api/habits/${id}/toggle`, "POST");
-    loadHabits();
+    const res = await api(`/api/habits/${id}/toggle`, "POST");
+    await loadHabits();
+    if (res?.done_today) bounceCheck($(`#habit-list li[data-id="${id}"]`));
   }
   if (action === "delete") {
     await api(`/api/habits/${id}`, "DELETE");
