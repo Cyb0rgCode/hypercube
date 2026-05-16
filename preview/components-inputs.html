@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"/>
+<title>Husky — Inputs</title>
+<link rel="stylesheet" href="preview.css"/>
+<style>
+  .field {
+    background: #1a1a26;
+    border: 1px solid #1e1e2e;
+    color: #e8e8f0;
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 13px;
+    font-family: var(--font-mono);
+    outline: none;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .field::placeholder { color: #6060a0; }
+  .field.focus { border-color: #7c6af7; box-shadow: 0 0 0 3px rgba(124,106,247,0.15); }
+  .lbl-cap {
+    font-family: var(--font-mono);
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: #6060a0;
+    margin-bottom: 5px;
+  }
+  .row-f { display: flex; gap: 12px; }
+  .col-f { flex: 1; }
+  select.field { appearance: none; background-image: linear-gradient(45deg, transparent 50%, #6060a0 50%), linear-gradient(135deg, #6060a0 50%, transparent 50%); background-position: calc(100% - 16px) 50%, calc(100% - 11px) 50%; background-size: 5px 5px; background-repeat: no-repeat; padding-right: 28px; }
+</style></head>
+<body>
+<div class="card-frame">
+  <div class="row-f">
+    <div class="col-f">
+      <div class="lbl-cap">Title</div>
+      <input class="field focus" value="Review Chapter 3 exercises" />
+    </div>
+    <div class="col-f" style="max-width:140px;">
+      <div class="lbl-cap">Priority</div>
+      <select class="field"><option>High</option></select>
+    </div>
+  </div>
+  <div class="row-f">
+    <div class="col-f">
+      <div class="lbl-cap">Deadline</div>
+      <input class="field" type="text" value="2026-05-18" />
+    </div>
+    <div class="col-f">
+      <div class="lbl-cap">Est. minutes</div>
+      <input class="field" type="text" placeholder="0" />
+    </div>
+  </div>
+</div>
+</body></html>

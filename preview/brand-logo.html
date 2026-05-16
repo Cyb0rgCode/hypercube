@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"/>
+<title>Husky — Logo</title>
+<link rel="stylesheet" href="preview.css"/>
+<style>
+  .row-l { display: flex; gap: 28px; align-items: center; }
+
+  .mark {
+    width: 64px; height: 64px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #7c6af7 0%, #6af7c8 100%);
+    box-shadow: 0 12px 36px rgba(124,106,247,0.4), inset 0 0 0 1px rgba(255,255,255,0.12);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+  }
+  .mark svg { width: 34px; height: 34px; }
+  .mark.sm { width: 30px; height: 30px; border-radius: 9px; box-shadow: 0 6px 18px rgba(124,106,247,0.4), inset 0 0 0 1px rgba(255,255,255,0.12); }
+  .mark.sm svg { width: 16px; height: 16px; }
+  .mark.tiny { width: 20px; height: 20px; border-radius: 6px; box-shadow: none; }
+  .mark.tiny svg { width: 11px; height: 11px; }
+
+  .wordmark {
+    display: flex; align-items: center; gap: 11px;
+  }
+  .wordmark .name {
+    font-family: var(--font-display); font-weight: 800;
+    font-size: 24px; letter-spacing: -0.02em;
+    color: #e8e8f0;
+  }
+  .lbl { font-family: var(--font-mono); font-size: 9px; color: #6060a0; letter-spacing: 0.08em; text-transform: uppercase; margin-top: 6px; text-align: center; }
+  .col { display: flex; flex-direction: column; align-items: center; }
+</style></head>
+<body>
+<div class="card-frame">
+  <div class="row-l">
+    <div class="col">
+      <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="9" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="5" rx="1.5"/><rect x="13.5" y="11" width="7.5" height="10" rx="1.5"/><rect x="3" y="15" width="7.5" height="6" rx="1.5"/></svg></div>
+      <div class="lbl">app icon · 64</div>
+    </div>
+    <div class="col">
+      <div class="wordmark">
+        <div class="mark sm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="9" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="5" rx="1.5"/><rect x="13.5" y="11" width="7.5" height="10" rx="1.5"/><rect x="3" y="15" width="7.5" height="6" rx="1.5"/></svg></div>
+        <span class="name">Husky</span>
+      </div>
+      <div class="lbl">sidebar lockup · 30</div>
+    </div>
+    <div class="col">
+      <div class="mark tiny"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="9" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="5" rx="1.5"/><rect x="13.5" y="11" width="7.5" height="10" rx="1.5"/><rect x="3" y="15" width="7.5" height="6" rx="1.5"/></svg></div>
+      <div class="lbl">favicon · 20</div>
+    </div>
+  </div>
+</div>
+</body></html>
