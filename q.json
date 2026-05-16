@@ -1,0 +1,189 @@
+[
+  {
+    "title": "IRLST → contact NAS (update) : 966-275-364",
+    "category": "CANADA",
+    "chapter": null,
+    "task_type": "other",
+    "priority": "high",
+    "urgent": true,
+    "important": true,
+    "deadline": "2025-04-30",
+    "estimated_minutes": 30
+  },
+  {
+    "title": "Visa Travailleur",
+    "category": "CANADA",
+    "chapter": null,
+    "task_type": "other",
+    "priority": "high",
+    "urgent": false,
+    "important": true,
+    "deadline": null,
+    "estimated_minutes": 120
+  },
+  {
+    "title": "ARRIMA QC",
+    "category": "CANADA",
+    "chapter": null,
+    "task_type": "other",
+    "priority": "high",
+    "urgent": false,
+    "important": true,
+    "deadline": null,
+    "estimated_minutes": 60
+  },
+  {
+    "title": "IRCC Fédérale",
+    "category": "CANADA",
+    "chapter": null,
+    "task_type": "other",
+    "priority": "high",
+    "urgent": false,
+    "important": true,
+    "deadline": null,
+    "estimated_minutes": 60
+  },
+  {
+    "title": "Voyage",
+    "category": "CANADA",
+    "chapter": null,
+    "task_type": "other",
+    "priority": "medium",
+    "urgent": false,
+    "important": false,
+    "deadline": null,
+    "estimated_minutes": 45
+  },
+  {
+    "title": "CPTE",
+    "category": "CANADA",
+    "chapter": null,
+    "task_type": "other",
+    "priority": "medium",
+    "urgent": false,
+    "important": false,
+    "deadline": null,
+    "estimated_minutes": 30
+  },
+  {
+    "title": "Facture 2495€",
+    "category": "ADRAS",
+    "chapter": "Organisation des dossiers",
+    "task_type": "other",
+    "priority": "high",
+    "urgent": false,
+    "important": true,
+    "deadline": null,
+    "estimated_minutes": 20
+  },
+  {
+    "title": "Paiement de Rached (525 SRNE + Récupération Classeur)",
+    "category": "ADRAS",
+    "chapter": "Organisation des dossiers",
+    "task_type": "other",
+    "priority": "high",
+    "urgent": false,
+    "important": true,
+    "deadline": null,
+    "estimated_minutes": 30
+  },
+  {
+    "title": "Liasse Fiscale → envoyer au Fisc",
+    "category": "ADRAS",
+    "chapter": "Organisation des dossiers",
+    "task_type": "other",
+    "priority": "high",
+    "urgent": false,
+    "important": true,
+    "deadline": null,
+    "estimated_minutes": 45
+  },
+  {
+    "title": "Déclaration Avril 2026",
+    "category": "ADRAS",
+    "chapter": "Organisation des dossiers",
+    "task_type": "other",
+    "priority": "high",
+    "urgent": false,
+    "important": true,
+    "deadline": "2026-04-30",
+    "estimated_minutes": 60
+  },
+  {
+    "title": "ZK 2025",
+    "category": "ADRAS",
+    "chapter": "Organisation des dossiers",
+    "task_type": "other",
+    "priority": "medium",
+    "urgent": false,
+    "important": false,
+    "deadline": null,
+    "estimated_minutes": 30
+  },
+  {
+    "title": "Inscription PMI",
+    "category": "PMP",
+    "chapter": null,
+    "task_type": "other",
+    "priority": "high",
+    "urgent": false,
+    "important": true,
+    "deadline": null,
+    "estimated_minutes": 45
+  },
+  {
+    "title": "Application examen PMP",
+    "category": "PMP",
+    "chapter": null,
+    "task_type": "assignment",
+    "priority": "high",
+    "urgent": false,
+    "important": true,
+    "deadline": null,
+    "estimated_minutes": 60
+  },
+  {
+    "title": "Examen 4ième partie — 36 questions (17h Dimanche)",
+    "category": "PMP",
+    "chapter": "Partie 4",
+    "task_type": "quiz",
+    "priority": "high",
+    "urgent": true,
+    "important": true,
+    "deadline": "2026-05-17",
+    "estimated_minutes": 120
+  },
+  {
+    "title": "Voir Cours PMP + voir détails & Rayen",
+    "category": "PMP",
+    "chapter": null,
+    "task_type": "reading",
+    "priority": "medium",
+    "urgent": false,
+    "important": true,
+    "deadline": null,
+    "estimated_minutes": 60
+  },
+  {
+    "title": "Ticket 10 — (6 Rocher / 4 Rocher croustillant)",
+    "category": "MAJOUL",
+    "chapter": null,
+    "task_type": "other",
+    "priority": "low",
+    "urgent": false,
+    "important": false,
+    "deadline": null,
+    "estimated_minutes": 15
+  },
+  {
+    "title": "6 x seaux pâtes 1kg+",
+    "category": "MAJOUL",
+    "chapter": null,
+    "task_type": "other",
+    "priority": "low",
+    "urgent": false,
+    "important": false,
+    "deadline": null,
+    "estimated_minutes": 15
+  }
+]

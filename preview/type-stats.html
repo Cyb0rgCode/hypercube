@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"/>
+<title>Husky — Stat numerals</title>
+<link rel="stylesheet" href="preview.css"/>
+<style>
+  .nums { display: flex; gap: 28px; align-items: baseline; flex-wrap: wrap; }
+  .stat {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 44px;
+    letter-spacing: -0.03em;
+    font-feature-settings: "tnum";
+    color: var(--fg-1);
+    line-height: 1;
+  }
+  .stat .suffix { color: #6060a0; font-weight: 600; }
+  .label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #6060a0;
+    margin-top: 6px;
+  }
+  .col { display: flex; flex-direction: column; }
+</style></head>
+<body>
+<div class="card-frame">
+  <div class="nums">
+    <div class="col">
+      <div class="stat">12</div>
+      <div class="label">tasks done today</div>
+    </div>
+    <div class="col">
+      <div class="stat">86<span class="suffix">%</span></div>
+      <div class="label">habit rate · 7d</div>
+    </div>
+    <div class="col">
+      <div class="stat">1<span class="suffix">h</span> 20<span class="suffix">m</span></div>
+      <div class="label">time logged today</div>
+    </div>
+  </div>
+</div>
+</body></html>

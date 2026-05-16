@@ -1,0 +1,303 @@
+/* ============================================================================
+   Husky Design System — Core Tokens
+   Typography, color, spacing, radii, shadows.
+   Source of truth: Dash/static/css/style.css (the live product).
+   ============================================================================ */
+
+/* ── Web fonts (Google) ────────────────────────────────────────────────────── */
+@import url("https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap");
+
+:root {
+  /* ── Color · raw palette ────────────────────────────────────────────────── */
+
+  /* Surfaces (deep blue-black, never pure black) */
+  --hk-bg:           #0a0a0f;   /* page */
+  --hk-surface:      #12121a;   /* cards */
+  --hk-surface-2:    #1a1a26;   /* inputs, secondary panels */
+  --hk-border:       #1e1e2e;   /* hairlines */
+  --hk-border-soft:  #1a1a28;   /* dividers, sidebar edge */
+
+  /* Text */
+  --hk-text:         #e8e8f0;   /* primary ink */
+  --hk-muted:        #6060a0;   /* secondary / meta */
+
+  /* Accent — violet (primary brand) */
+  --hk-violet:        #7c6af7;
+  --hk-violet-light:  #9d8fff;
+  --hk-violet-dim:    rgba(124, 106, 247, 0.15);
+
+  /* Semantic — vibrant, slightly desaturated */
+  --hk-mint:    #6af7c8;        /* success / done / cyan accent */
+  --hk-mint-dim:   rgba(106, 247, 200, 0.13);
+  --hk-pink:    #f76a8c;        /* danger / urgent / high */
+  --hk-pink-dim:   rgba(247, 106, 140, 0.13);
+  --hk-amber:   #f7c76a;        /* warning / medium / streaks */
+  --hk-amber-dim:  rgba(247, 199, 106, 0.13);
+
+  /* Alias: cyan == mint (used interchangeably in product) */
+  --hk-cyan:        var(--hk-mint);
+  --hk-cyan-dim:    var(--hk-mint-dim);
+
+  /* ── Semantic color roles ───────────────────────────────────────────────── */
+  --fg-1:          var(--hk-text);
+  --fg-2:          var(--hk-muted);
+  --bg-1:          var(--hk-bg);
+  --bg-2:          var(--hk-surface);
+  --bg-3:          var(--hk-surface-2);
+  --line:          var(--hk-border);
+  --line-soft:     var(--hk-border-soft);
+
+  --accent:        var(--hk-violet);
+  --accent-light:  var(--hk-violet-light);
+  --accent-dim:    var(--hk-violet-dim);
+
+  --success:       var(--hk-mint);
+  --danger:        var(--hk-pink);
+  --warning:       var(--hk-amber);
+
+  /* ── Brand gradient — the headline treatment ────────────────────────────── */
+  --hk-gradient-brand: linear-gradient(
+    135deg,
+    var(--hk-violet)        0%,
+    var(--hk-violet-light) 60%,
+    var(--hk-mint)        100%
+  );
+  --hk-gradient-card: linear-gradient(135deg, rgba(124,106,247,0.12) 0%, rgba(106,247,200,0.06) 100%);
+  --hk-gradient-bar:  linear-gradient(90deg, var(--hk-violet), var(--hk-mint));
+
+  /* Ambient body wash — radial glows in opposing corners */
+  --hk-ambient-bg:
+    radial-gradient(ellipse 800px 600px at 0%   0%,   rgba(124,106,247,0.07), transparent 60%),
+    radial-gradient(ellipse 700px 500px at 100% 100%, rgba(106,247,200,0.04), transparent 60%);
+
+  /* ── Typography · families ──────────────────────────────────────────────── */
+  --font-display: "Syne", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-ui:      "Syne", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono:    "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* ── Typography · scale ─────────────────────────────────────────────────── */
+  /* Husky uses Syne for headings (sharp, geometric) and JetBrains Mono
+     for all metadata, labels, numbers, badges, timestamps. */
+
+  --t-hero-size:    36px;   /* Page titles — gradient-painted */
+  --t-hero-weight:  800;
+  --t-hero-track:   -0.03em;
+
+  --t-h1-size:      26px;
+  --t-h1-weight:    800;
+  --t-h1-track:     -0.02em;
+
+  --t-h2-size:      14px;
+  --t-h2-weight:    700;
+  --t-h2-track:     -0.01em;
+
+  --t-stat-size:    32px;   /* Big numeric stats — mono, tabular */
+  --t-stat-weight:  700;
+  --t-stat-track:   -0.03em;
+
+  --t-body-size:    14px;
+  --t-body-weight:  400;
+
+  --t-label-size:   10px;   /* All-caps mono labels */
+  --t-label-weight: 700;
+  --t-label-track:  0.08em;
+
+  --t-meta-size:    11px;   /* Mono meta / dates / counts */
+  --t-meta-track:   0.04em;
+
+  --t-mini-size:    9px;    /* Pill badges */
+  --t-mini-track:   0.08em;
+
+  /* ── Radii ──────────────────────────────────────────────────────────────── */
+  --r-xs:  4px;   /* tags, badges */
+  --r-sm:  6px;   /* tiny chips, pills */
+  --r-md:  8px;   /* buttons, inputs */
+  --r-lg:  12px;  /* segmented controls */
+  --r-xl:  14px;  /* cards */
+  --r-pill: 20px; /* full pill */
+  --radius: var(--r-xl);
+
+  /* ── Shadows / elevation ────────────────────────────────────────────────── */
+  --shadow-sm:   0 1px 2px rgba(0,0,0,0.18), 0 2px 6px rgba(0,0,0,0.14);
+  --shadow-md:   0 2px 6px rgba(0,0,0,0.22), 0 12px 32px rgba(0,0,0,0.32);
+  --shadow-glow: 0 0 0 1px rgba(255,255,255,0.03), 0 12px 36px rgba(0,0,0,0.4);
+  --shadow-accent: 0 4px 14px rgba(124,106,247,0.3);
+  --shadow-accent-strong: 0 6px 18px rgba(124,106,247,0.4);
+
+  /* ── Spacing scale (4px grid) ───────────────────────────────────────────── */
+  --s-1:  4px;
+  --s-2:  8px;
+  --s-3:  12px;
+  --s-4:  16px;
+  --s-5:  20px;
+  --s-6:  24px;
+  --s-7:  32px;
+  --s-8:  40px;
+
+  /* ── Motion ─────────────────────────────────────────────────────────────── */
+  /* Springy iOS-style easing; quick reactive transitions. */
+  --spring:        cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out:      cubic-bezier(0.22, 1, 0.36, 1);
+  --t-fast:        0.15s;
+  --t-base:        0.2s;
+  --t-slow:        0.42s;
+
+  /* Glassmorphism */
+  --glass-blur:    blur(20px);
+  --glass-blur-strong: blur(28px) saturate(180%);
+  --glass-tint:        rgba(18, 18, 26, 0.75);   /* sidebar / floating panels */
+  --glass-elev:        rgba(255, 255, 255, 0.035); /* inset segmented track */
+  --glass-elev-line:   rgba(255, 255, 255, 0.05);
+  --glass-pill:        linear-gradient(180deg, var(--bg-3), var(--bg-2)); /* raised pill (segmented indicator) */
+  --glass-pill-line:   rgba(255, 255, 255, 0.08);
+  --glass-pill-shadow: 0 2px 6px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+
+  /* Brand glows — toned per theme so the logo doesn't blow out in light mode */
+  --logo-glow:      0 0 14px rgba(106, 247, 200, 0.50), 0 0 32px rgba(124, 106, 247, 0.40);
+  --logo-mark-glow: drop-shadow(0 0 10px rgba(106, 247, 200, 0.55))
+                    drop-shadow(0 0 22px rgba(124, 106, 247, 0.45));
+}
+
+/* ============================================================================
+   Light theme — modern, soft cool whites with the same violet→mint accents.
+   Activated by setting `data-theme="light"` on <html>.
+   ============================================================================ */
+:root[data-theme="light"] {
+  /* Surfaces — soft cool whites, never pure white for the page */
+  --hk-bg:           #f6f6fb;   /* page */
+  --hk-surface:      #ffffff;   /* cards */
+  --hk-surface-2:    #f0f0f7;   /* inputs, secondary panels */
+  --hk-border:       #e3e3ed;   /* hairlines */
+  --hk-border-soft:  #ededf3;   /* dividers, sidebar edge */
+
+  /* Text — near-black with a faint blue cast to echo the brand */
+  --hk-text:         #15151e;
+  --hk-muted:        #6f6f95;
+
+  /* Accent tints — stronger so they remain visible on white */
+  --hk-violet-dim:   rgba(124, 106, 247, 0.12);
+  --hk-mint-dim:     rgba(106, 247, 200, 0.20);
+  --hk-pink-dim:     rgba(247, 106, 140, 0.12);
+  --hk-amber-dim:    rgba(247, 199, 106, 0.18);
+
+  /* Ambient body wash — slightly stronger, since light bg shows less of it */
+  --hk-ambient-bg:
+    radial-gradient(ellipse 900px 600px at 0%   0%,   rgba(124, 106, 247, 0.07), transparent 60%),
+    radial-gradient(ellipse 800px 500px at 100% 100%, rgba(106, 247, 200, 0.06), transparent 60%);
+
+  /* Shadows — soft, cool, low-opacity instead of pure black */
+  --shadow-sm:            0 1px 2px rgba(20, 20, 40, 0.05), 0 2px 8px rgba(20, 20, 40, 0.04);
+  --shadow-md:            0 4px 12px rgba(20, 20, 40, 0.06), 0 16px 36px rgba(20, 20, 40, 0.08);
+  --shadow-glow:          0 0 0 1px rgba(20, 20, 40, 0.04), 0 14px 40px rgba(20, 20, 40, 0.10);
+  --shadow-accent:        0 4px 14px rgba(124, 106, 247, 0.22);
+  --shadow-accent-strong: 0 6px 20px rgba(124, 106, 247, 0.32);
+
+  /* Glass — white-tinted instead of dark-tinted */
+  --glass-tint:        rgba(255, 255, 255, 0.78);
+  --glass-elev:        rgba(20, 20, 40, 0.04);
+  --glass-elev-line:   rgba(20, 20, 40, 0.06);
+  --glass-pill:        linear-gradient(180deg, #ffffff, #f4f4fa);
+  --glass-pill-line:   rgba(20, 20, 40, 0.08);
+  --glass-pill-shadow: 0 1px 3px rgba(20, 20, 40, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+
+  /* Brand glows — much subtler on white so the logo doesn't smear */
+  --logo-glow:      0 1px 2px rgba(124, 106, 247, 0.12), 0 0 18px rgba(124, 106, 247, 0.10);
+  --logo-mark-glow: drop-shadow(0 2px 8px rgba(124, 106, 247, 0.28))
+                    drop-shadow(0 6px 18px rgba(106, 247, 200, 0.18));
+}
+
+/* ============================================================================
+   Semantic typography presets — apply to elements directly.
+   ============================================================================ */
+
+.hk-hero {
+  font-family: var(--font-display);
+  font-size: var(--t-hero-size);
+  font-weight: var(--t-hero-weight);
+  letter-spacing: var(--t-hero-track);
+  line-height: 1.05;
+  background: var(--hk-gradient-brand);
+  -webkit-background-clip: text;
+          background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.hk-h1 {
+  font-family: var(--font-display);
+  font-size: var(--t-h1-size);
+  font-weight: var(--t-h1-weight);
+  letter-spacing: var(--t-h1-track);
+  color: var(--fg-1);
+}
+
+.hk-h2 {
+  font-family: var(--font-display);
+  font-size: var(--t-h2-size);
+  font-weight: var(--t-h2-weight);
+  letter-spacing: var(--t-h2-track);
+  color: var(--fg-1);
+}
+
+.hk-body {
+  font-family: var(--font-ui);
+  font-size: var(--t-body-size);
+  font-weight: var(--t-body-weight);
+  color: var(--fg-1);
+}
+
+.hk-stat {
+  font-family: var(--font-mono);
+  font-size: var(--t-stat-size);
+  font-weight: var(--t-stat-weight);
+  letter-spacing: var(--t-stat-track);
+  font-feature-settings: "tnum";
+  color: var(--fg-1);
+  line-height: 1.05;
+}
+
+.hk-label {
+  font-family: var(--font-mono);
+  font-size: var(--t-label-size);
+  font-weight: var(--t-label-weight);
+  letter-spacing: var(--t-label-track);
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+
+.hk-meta {
+  font-family: var(--font-mono);
+  font-size: var(--t-meta-size);
+  letter-spacing: var(--t-meta-track);
+  color: var(--fg-2);
+}
+
+.hk-mini {
+  font-family: var(--font-mono);
+  font-size: var(--t-mini-size);
+  font-weight: var(--t-label-weight);
+  letter-spacing: var(--t-mini-track);
+  text-transform: uppercase;
+}
+
+/* ============================================================================
+   Element-level defaults — for "code → just looks like Husky" prototyping.
+   ============================================================================ */
+
+html, body {
+  background: var(--bg-1);
+  background-image: var(--hk-ambient-bg);
+  background-attachment: fixed;
+  color: var(--fg-1);
+  font-family: var(--font-ui);
+  font-size: var(--t-body-size);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.005em;
+}
+
+h1 { font: var(--t-h1-weight) var(--t-h1-size)/1.1 var(--font-display); letter-spacing: var(--t-h1-track); color: var(--fg-1); }
+h2 { font: var(--t-h2-weight) var(--t-h2-size)/1.2 var(--font-display); letter-spacing: var(--t-h2-track); color: var(--fg-1); }
+code, kbd, samp { font-family: var(--font-mono); }
+
+::selection { background: var(--accent-dim); color: var(--fg-1); }

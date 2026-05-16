@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"/>
+<title>Husky — Task rows</title>
+<link rel="stylesheet" href="preview.css"/>
+<style>
+  .list { display: flex; flex-direction: column; gap: 8px; list-style: none; padding: 0; margin: 0; }
+  .row-li {
+    background: #12121a;
+    border: 1px solid #1e1e2e;
+    border-radius: 14px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.18), 0 2px 6px rgba(0,0,0,0.14);
+  }
+  .row-li.li-both      { border-left: 3px solid #f76a8c; }
+  .row-li.li-important { border-left: 3px solid #6af7c8; }
+  .row-li.li-urgent    { border-left: 3px solid #f7c76a; }
+  .check {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: 2px solid #1e1e2e;
+    background: none;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; color: #0a0a0f;
+  }
+  .check.done { background: #6af7c8; border-color: #6af7c8; }
+  .title { font-family: var(--font-display); font-size: 14px; font-weight: 600; color: #e8e8f0; flex: 1; min-width: 140px; }
+  .row-li.done .title { text-decoration: line-through; }
+  .row-li.done { opacity: 0.55; }
+
+  .chip { font-family: var(--font-mono); font-size: 10px; font-weight: 600; letter-spacing: 0.04em; border-radius: 4px; padding: 1px 6px; border: 1px solid transparent; white-space: nowrap; }
+  .tag-type     { color: #9d8fff; background: rgba(124,106,247,0.15); border-color: rgba(124,106,247,0.2); }
+  .tag-urgent   { color: #f76a8c; background: rgba(247,106,140,0.13); border-color: rgba(247,106,140,0.3); font-weight: 700; }
+  .tag-key      { color: #6af7c8; background: rgba(106,247,200,0.13); border-color: rgba(106,247,200,0.3); font-weight: 700; }
+  .pill { font-family: var(--font-mono); font-size: 9px; font-weight: 700; padding: 3px 9px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.08em; border: 1px solid transparent; }
+  .b-high   { background: rgba(247,106,140,0.13); color: #f76a8c; border-color: rgba(247,106,140,0.25); }
+  .b-low    { background: rgba(106,247,200,0.13); color: #6af7c8; border-color: rgba(106,247,200,0.25); }
+  .meta { color: #6060a0; font-size: 11px; font-family: var(--font-mono); white-space: nowrap; }
+</style></head>
+<body>
+<div class="card-frame">
+  <ul class="list">
+    <li class="row-li li-both">
+      <div class="check"></div>
+      <span class="title">Submit assignment 4 to portal</span>
+      <span class="chip tag-type">assignment</span>
+      <span class="chip tag-urgent">! urgent</span>
+      <span class="chip tag-key">★ key</span>
+      <span class="pill b-high">high</span>
+      <span class="meta">May 18</span>
+    </li>
+    <li class="row-li done">
+      <div class="check done">✓</div>
+      <span class="title">Read chapter 3 intro</span>
+      <span class="pill b-low">low</span>
+      <span class="meta">12m logged</span>
+    </li>
+  </ul>
+</div>
+</body></html>
