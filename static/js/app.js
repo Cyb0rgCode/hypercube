@@ -1,3 +1,39 @@
+// ── Theme ──────────────────────────────────────────────────────────────────────
+
+(function () {
+  const saved = localStorage.getItem("theme") || "light";
+  if (saved === "dark") document.documentElement.setAttribute("data-theme", "dark");
+})();
+
+document.addEventListener("DOMContentLoaded", () => {
+  const btn = $("#theme-toggle");
+  const moon = $("#theme-icon-moon");
+  const sun = $("#theme-icon-sun");
+  const label = $("#theme-label");
+
+  function applyTheme(theme) {
+    if (theme === "dark") {
+      document.documentElement.setAttribute("data-theme", "dark");
+      moon.hidden = true;
+      sun.hidden = false;
+      label.textContent = "Light mode";
+    } else {
+      document.documentElement.removeAttribute("data-theme");
+      moon.hidden = false;
+      sun.hidden = true;
+      label.textContent = "Dark mode";
+    }
+    localStorage.setItem("theme", theme);
+  }
+
+  applyTheme(localStorage.getItem("theme") || "light");
+
+  btn.addEventListener("click", () => {
+    const current = document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+    applyTheme(current === "dark" ? "light" : "dark");
+  });
+});
+
 // ── Utilities ──────────────────────────────────────────────────────────────────
 
 const $ = (sel, ctx = document) => ctx.querySelector(sel);
