@@ -966,9 +966,34 @@ h2 {
   font-weight: 600;
   transition: border-color 0.15s;
 }
-.matrix-task:hover { border-color: var(--accent); }
-.matrix-task.done { opacity: 0.4; }
-.matrix-task.done span { text-decoration: line-through; }
+.matrix-task:not(.done):hover { border-color: var(--accent); }
+
+/* ── Sacrificed task ─────────────────────────────────────────────────────────
+   Completed tasks stay in the quadrant so you can see what's been dealt with.
+   The whole row dims, the title gets a bold red strikethrough, and the check
+   button locks into its done state. Hovering reveals a faint "reopen" cue.   */
+.matrix-task.done {
+  opacity: 0.52;
+  background: rgba(var(--red-rgb), 0.03);
+  border-color: rgba(var(--red-rgb), 0.18);
+  cursor: default;
+  pointer-events: auto; /* keep clickable so the check can be toggled back */
+}
+.matrix-task.done:hover {
+  opacity: 0.7;
+  border-color: rgba(var(--red-rgb), 0.35);
+}
+.matrix-task.done > span:not(.item-meta) {
+  text-decoration: line-through;
+  text-decoration-color: rgba(var(--red-rgb), 0.7);
+  text-decoration-thickness: 2px;
+  color: var(--muted);
+}
+.matrix-task.done .item-meta {
+  opacity: 0.5;
+}
+/* Block drag on sacrificed rows */
+.matrix-task.done[draggable="false"] { cursor: default; }
 
 /* Title flexes and shrinks; date stays whole and falls to a new line if
    it can't fit alongside. Prevents the date from sliding past the right

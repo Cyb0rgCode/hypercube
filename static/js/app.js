@@ -1308,11 +1308,11 @@ let matrixDragId = null;
 
 async function loadMatrix() {
   matrixTasks = await api("/api/tasks");
-  const open = matrixTasks.filter(t => !t.completed);
-  renderMatrixQuadrant("matrix-q1", open.filter(t =>  t.urgent &&  t.important));
-  renderMatrixQuadrant("matrix-q2", open.filter(t => !t.urgent &&  t.important));
-  renderMatrixQuadrant("matrix-q3", open.filter(t =>  t.urgent && !t.important));
-  renderMatrixQuadrant("matrix-q4", open.filter(t => !t.urgent && !t.important));
+  // Show ALL tasks — completed ones stay visible as "sacrificed" (struck through)
+  renderMatrixQuadrant("matrix-q1", matrixTasks.filter(t =>  t.urgent &&  t.important));
+  renderMatrixQuadrant("matrix-q2", matrixTasks.filter(t => !t.urgent &&  t.important));
+  renderMatrixQuadrant("matrix-q3", matrixTasks.filter(t =>  t.urgent && !t.important));
+  renderMatrixQuadrant("matrix-q4", matrixTasks.filter(t => !t.urgent && !t.important));
 }
 
 function renderMatrixQuadrant(listId, tasks) {
@@ -1322,10 +1322,12 @@ function renderMatrixQuadrant(listId, tasks) {
     return;
   }
   list.innerHTML = tasks.map(t => `
-    <li class="matrix-task" data-id="${t.id}" draggable="true">
-      <button class="matrix-check" data-action="toggle" title="Mark complete"></button>
+    <li class="matrix-task${t.completed ? " done" : ""}" data-id="${t.id}" draggable="${t.completed ? "false" : "true"}">
+      <button class="matrix-check${t.completed ? " done" : ""}" data-action="toggle"
+              title="${t.completed ? "Mark incomplete" : "Mark complete"}"
+              aria-label="${t.completed ? "Mark incomplete" : "Mark complete"}"></button>
       <span>${escHtml(t.title)}</span>
-      ${t.deadline ? `<span class="item-meta" style="margin-left:auto;font-size:11px">${t.deadline}</span>` : ""}
+      ${t.deadline ? `<span class="item-meta">${t.deadline}</span>` : ""}
     </li>
   `).join("");
 }
@@ -1333,10 +1335,13 @@ function renderMatrixQuadrant(listId, tasks) {
 $("#tab-matrix").addEventListener("click", async e => {
   const btn = e.target.closest("[data-action='toggle']");
   if (!btn) return;
-  const li = btn.closest(".matrix-task");
-  const id = Number(li.dataset.id);
-  await api(`/api/tasks/${id}`, "PUT", { completed: true });
-  toast("Task done");
+  const li  = btn.closest(".matrix-task");
+  const id  = Number(li.dataset.id);
+  const task = matrixTasks.find(t => t.id === id);
+  if (!task) return;
+  const nowDone = !task.completed;
+  await api(`/api/tasks/${id}`, "PUT", { completed: nowDone });
+  toast(nowDone ? "Task sacrificed ✓" : "Task reopened");
   loadMatrix();
 });
 
