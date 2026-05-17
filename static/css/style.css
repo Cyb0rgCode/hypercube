@@ -1589,6 +1589,16 @@ body.drag-selecting * { cursor: crosshair !important; }
   color: var(--accent);
 }
 
+/* Touch drag clone — floats above everything, slightly lifted */
+.matrix-drag-clone {
+  opacity: 0.93;
+  transform: scale(1.04) rotate(1.2deg) !important;
+  box-shadow: 0 14px 36px rgba(0,0,0,0.22), 0 2px 8px rgba(0,0,0,0.12) !important;
+  border-color: var(--accent) !important;
+  transition: none !important;
+  will-change: transform, left, top;
+}
+
 /* ── Toast notifications ── */
 .toast-container {
   position: fixed; bottom: 24px; right: 24px;
