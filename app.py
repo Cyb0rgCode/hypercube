@@ -1,25 +1,119 @@
-from flask import Flask, jsonify, request, render_template
-from datetime import date, timedelta
+import os
+import re
 import sqlite3
-from database import get_db, init_db
+from datetime import date, timedelta
+from functools import wraps
+
+from flask import Flask, jsonify, request, render_template, session
+
+from database import get_db, init_db, get_user_by_username, create_user
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("SECRET_KEY", "husky-dev-secret-change-me")
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    PERMANENT_SESSION_LIFETIME=timedelta(days=30),
+)
 
 init_db()
 
+
+# ── Auth helpers ──────────────────────────────────────────────────────────────
+
+USERNAME_RE = re.compile(r"^[a-zA-Z0-9_]{2,32}$")
+
+
+def current_user_id():
+    return session.get("user_id")
+
+
+def require_user(view):
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        uid = current_user_id()
+        if uid is None:
+            return jsonify({"error": "unauthorized"}), 401
+        return view(uid, *args, **kwargs)
+    return wrapped
+
+
+def _normalize_username(raw):
+    if not isinstance(raw, str):
+        return None
+    name = raw.strip()
+    return name if USERNAME_RE.match(name) else None
+
+
+# ── Auth routes ───────────────────────────────────────────────────────────────
+
+@app.route("/api/auth/me")
+def auth_me():
+    uid = current_user_id()
+    if uid is None:
+        return jsonify({"user": None})
+    conn = get_db()
+    row = conn.execute(
+        "SELECT id, username, created_at FROM users WHERE id = ?", (uid,)
+    ).fetchone()
+    conn.close()
+    if not row:
+        session.pop("user_id", None)
+        return jsonify({"user": None})
+    return jsonify({"user": dict(row)})
+
+
+@app.route("/api/auth/signup", methods=["POST"])
+def auth_signup():
+    username = _normalize_username((request.json or {}).get("username", ""))
+    if not username:
+        return jsonify({"error": "username must be 2–32 characters, letters/numbers/underscore only"}), 400
+    if get_user_by_username(username):
+        return jsonify({"error": "username already taken"}), 409
+    try:
+        user = create_user(username)
+    except sqlite3.IntegrityError:
+        return jsonify({"error": "username already taken"}), 409
+    session.permanent = True
+    session["user_id"] = user["id"]
+    return jsonify({"user": user}), 201
+
+
+@app.route("/api/auth/login", methods=["POST"])
+def auth_login():
+    username = _normalize_username((request.json or {}).get("username", ""))
+    if not username:
+        return jsonify({"error": "username must be 2–32 characters, letters/numbers/underscore only"}), 400
+    user = get_user_by_username(username)
+    if not user:
+        return jsonify({"error": "no account with that username"}), 404
+    session.permanent = True
+    session["user_id"] = user["id"]
+    return jsonify({"user": user})
+
+
+@app.route("/api/auth/logout", methods=["POST"])
+def auth_logout():
+    session.pop("user_id", None)
+    return jsonify({"ok": True})
+
+
+# ── Index ─────────────────────────────────────────────────────────────────────
 
 @app.route("/")
 def index():
     return render_template("index.html")
 
 
-# ── Tasks ──────────────────────────────────────────────────────────────────────
+# ── Tasks ─────────────────────────────────────────────────────────────────────
 
 @app.route("/api/tasks", methods=["GET"])
-def get_tasks():
+@require_user
+def get_tasks(uid):
     conn = get_db()
     rows = conn.execute(
-        "SELECT * FROM tasks ORDER BY completed ASC, priority DESC, created_at DESC"
+        "SELECT * FROM tasks WHERE user_id = ? ORDER BY completed ASC, priority DESC, created_at DESC",
+        (uid,),
     ).fetchall()
     tasks = []
     for row in rows:
@@ -34,17 +128,24 @@ def get_tasks():
 
 
 @app.route("/api/tasks/<int:task_id>/log", methods=["POST"])
-def log_task_time(task_id):
+@require_user
+def log_task_time(uid, task_id):
     minutes = int(request.json.get("minutes", 0))
     if minutes <= 0:
         return jsonify({"error": "minutes must be positive"}), 400
     conn = get_db()
+    task_row = conn.execute(
+        "SELECT * FROM tasks WHERE id = ? AND user_id = ?", (task_id, uid)
+    ).fetchone()
+    if not task_row:
+        conn.close()
+        return jsonify({"error": "task not found"}), 404
     conn.execute(
         "INSERT INTO task_logs (task_id, duration_minutes) VALUES (?, ?)",
         (task_id, minutes),
     )
     conn.commit()
-    task = dict(conn.execute("SELECT * FROM tasks WHERE id = ?", (task_id,)).fetchone())
+    task = dict(task_row)
     task["time_logged"] = conn.execute(
         "SELECT COALESCE(SUM(duration_minutes), 0) FROM task_logs WHERE task_id = ?",
         (task_id,),
@@ -54,15 +155,22 @@ def log_task_time(task_id):
 
 
 @app.route("/api/tasks", methods=["POST"])
-def create_task():
+@require_user
+def create_task(uid):
     data = request.json
     conn = get_db()
     cur = conn.execute(
-        "INSERT INTO tasks (title, priority, deadline, urgent, important, category, estimated_minutes, task_type, chapter) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        (data["title"], data.get("priority", "medium"), data.get("deadline"),
-         int(bool(data.get("urgent", False))), int(bool(data.get("important", False))),
-         data.get("category", ""), int(data.get("estimated_minutes", 0)),
-         data.get("task_type", ""), data.get("chapter", "")),
+        """INSERT INTO tasks
+             (title, priority, deadline, urgent, important, category,
+              estimated_minutes, task_type, chapter, user_id)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (
+            data["title"], data.get("priority", "medium"), data.get("deadline"),
+            int(bool(data.get("urgent", False))), int(bool(data.get("important", False))),
+            data.get("category", ""), int(data.get("estimated_minutes", 0)),
+            data.get("task_type", ""), data.get("chapter", ""),
+            uid,
+        ),
     )
     conn.commit()
     row = conn.execute("SELECT * FROM tasks WHERE id = ?", (cur.lastrowid,)).fetchone()
@@ -71,9 +179,16 @@ def create_task():
 
 
 @app.route("/api/tasks/<int:task_id>", methods=["PUT"])
-def update_task(task_id):
+@require_user
+def update_task(uid, task_id):
     data = request.json
     conn = get_db()
+    owner = conn.execute(
+        "SELECT 1 FROM tasks WHERE id = ? AND user_id = ?", (task_id, uid)
+    ).fetchone()
+    if not owner:
+        conn.close()
+        return jsonify({"error": "task not found"}), 404
     if "completed" in data:
         completed_at = str(date.today()) if data["completed"] else None
         conn.execute(
@@ -105,22 +220,28 @@ def update_task(task_id):
 
 
 @app.route("/api/tasks/<int:task_id>", methods=["DELETE"])
-def delete_task(task_id):
+@require_user
+def delete_task(uid, task_id):
     conn = get_db()
-    conn.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
+    cur = conn.execute("DELETE FROM tasks WHERE id = ? AND user_id = ?", (task_id, uid))
     conn.commit()
+    deleted = cur.rowcount
     conn.close()
+    if not deleted:
+        return jsonify({"error": "task not found"}), 404
     return "", 204
 
 
-# ── Habits ─────────────────────────────────────────────────────────────────────
+# ── Habits ────────────────────────────────────────────────────────────────────
 
 @app.route("/api/habits", methods=["GET"])
-def get_habits():
+@require_user
+def get_habits(uid):
     today = str(date.today())
     conn = get_db()
     habits = conn.execute(
-        "SELECT * FROM habits WHERE active = 1 ORDER BY created_at ASC"
+        "SELECT * FROM habits WHERE active = 1 AND user_id = ? ORDER BY created_at ASC",
+        (uid,),
     ).fetchall()
     result = []
     for h in habits:
@@ -130,8 +251,7 @@ def get_habits():
             (h["id"], today),
         ).fetchone()
         h["done_today"] = bool(done_today)
-        streak = _calc_streak(conn, h["id"])
-        h["streak"] = streak
+        h["streak"] = _calc_streak(conn, h["id"])
         result.append(h)
     conn.close()
     return jsonify(result)
@@ -152,10 +272,14 @@ def _calc_streak(conn, habit_id):
 
 
 @app.route("/api/habits", methods=["POST"])
-def create_habit():
+@require_user
+def create_habit(uid):
     data = request.json
     conn = get_db()
-    cur = conn.execute("INSERT INTO habits (name) VALUES (?)", (data["name"],))
+    cur = conn.execute(
+        "INSERT INTO habits (name, user_id) VALUES (?, ?)",
+        (data["name"], uid),
+    )
     conn.commit()
     row = conn.execute("SELECT * FROM habits WHERE id = ?", (cur.lastrowid,)).fetchone()
     conn.close()
@@ -166,9 +290,16 @@ def create_habit():
 
 
 @app.route("/api/habits/<int:habit_id>/toggle", methods=["POST"])
-def toggle_habit(habit_id):
+@require_user
+def toggle_habit(uid, habit_id):
     today = str(date.today())
     conn = get_db()
+    owner = conn.execute(
+        "SELECT 1 FROM habits WHERE id = ? AND user_id = ?", (habit_id, uid)
+    ).fetchone()
+    if not owner:
+        conn.close()
+        return jsonify({"error": "habit not found"}), 404
     existing = conn.execute(
         "SELECT id FROM habit_completions WHERE habit_id = ? AND completion_date = ?",
         (habit_id, today),
@@ -192,36 +323,50 @@ def toggle_habit(habit_id):
 
 
 @app.route("/api/habits/<int:habit_id>", methods=["DELETE"])
-def delete_habit(habit_id):
+@require_user
+def delete_habit(uid, habit_id):
     conn = get_db()
-    conn.execute("UPDATE habits SET active = 0 WHERE id = ?", (habit_id,))
+    cur = conn.execute(
+        "UPDATE habits SET active = 0 WHERE id = ? AND user_id = ?",
+        (habit_id, uid),
+    )
     conn.commit()
+    deleted = cur.rowcount
     conn.close()
+    if not deleted:
+        return jsonify({"error": "habit not found"}), 404
     return "", 204
 
 
-# ── Goals ──────────────────────────────────────────────────────────────────────
+# ── Goals ─────────────────────────────────────────────────────────────────────
 
 @app.route("/api/goals", methods=["GET"])
-def get_goals():
+@require_user
+def get_goals(uid):
     conn = get_db()
-    rows = conn.execute("SELECT * FROM goals ORDER BY created_at DESC").fetchall()
+    rows = conn.execute(
+        "SELECT * FROM goals WHERE user_id = ? ORDER BY created_at DESC",
+        (uid,),
+    ).fetchall()
     conn.close()
     return jsonify([dict(r) for r in rows])
 
 
 @app.route("/api/goals", methods=["POST"])
-def create_goal():
+@require_user
+def create_goal(uid):
     data = request.json
     conn = get_db()
     cur = conn.execute(
-        "INSERT INTO goals (title, target_value, current_value, unit, deadline) VALUES (?, ?, ?, ?, ?)",
+        """INSERT INTO goals (title, target_value, current_value, unit, deadline, user_id)
+           VALUES (?, ?, ?, ?, ?, ?)""",
         (
             data["title"],
             float(data["target_value"]),
             float(data.get("current_value", 0)),
             data.get("unit", ""),
             data.get("deadline"),
+            uid,
         ),
     )
     conn.commit()
@@ -231,9 +376,16 @@ def create_goal():
 
 
 @app.route("/api/goals/<int:goal_id>", methods=["PUT"])
-def update_goal(goal_id):
+@require_user
+def update_goal(uid, goal_id):
     data = request.json
     conn = get_db()
+    owner = conn.execute(
+        "SELECT 1 FROM goals WHERE id = ? AND user_id = ?", (goal_id, uid)
+    ).fetchone()
+    if not owner:
+        conn.close()
+        return jsonify({"error": "goal not found"}), 404
     if "current_value" in data:
         conn.execute(
             "UPDATE goals SET current_value = ? WHERE id = ?",
@@ -248,64 +400,73 @@ def update_goal(goal_id):
 
 
 @app.route("/api/goals/<int:goal_id>", methods=["DELETE"])
-def delete_goal(goal_id):
+@require_user
+def delete_goal(uid, goal_id):
     conn = get_db()
-    conn.execute("DELETE FROM goals WHERE id = ?", (goal_id,))
+    cur = conn.execute(
+        "DELETE FROM goals WHERE id = ? AND user_id = ?", (goal_id, uid)
+    )
     conn.commit()
+    deleted = cur.rowcount
     conn.close()
+    if not deleted:
+        return jsonify({"error": "goal not found"}), 404
     return "", 204
 
 
-# ── Analytics ──────────────────────────────────────────────────────────────────
+# ── Analytics ─────────────────────────────────────────────────────────────────
 
 @app.route("/api/analytics")
-def analytics():
+@require_user
+def analytics(uid):
     conn = get_db()
     today = date.today()
-
     since = str(today - timedelta(days=6))
 
-    # Daily time totals from task logs over last 7 days
+    # Daily time totals from this user's task logs over last 7 days
     daily_time = conn.execute(
-        """SELECT logged_at as date, SUM(duration_minutes) as total
-           FROM task_logs WHERE logged_at >= ?
-           GROUP BY logged_at ORDER BY logged_at ASC""",
-        (since,),
+        """SELECT tl.logged_at AS date, SUM(tl.duration_minutes) AS total
+             FROM task_logs tl
+             JOIN tasks t ON tl.task_id = t.id
+            WHERE tl.logged_at >= ? AND t.user_id = ?
+         GROUP BY tl.logged_at ORDER BY tl.logged_at ASC""",
+        (since, uid),
     ).fetchall()
     daily_map = {r["date"]: r["total"] for r in daily_time}
-    daily_filled = []
-    for i in range(7):
-        d = str(today - timedelta(days=6 - i))
-        daily_filled.append({"date": d, "total": daily_map.get(d, 0)})
+    daily_filled = [
+        {"date": str(today - timedelta(days=6 - i)),
+         "total": daily_map.get(str(today - timedelta(days=6 - i)), 0)}
+        for i in range(7)
+    ]
 
-    # Time by task priority over last 7 days
     time_by_category = conn.execute(
-        """SELECT t.priority as category, SUM(tl.duration_minutes) as total
-           FROM task_logs tl
-           JOIN tasks t ON tl.task_id = t.id
-           WHERE tl.logged_at >= ?
-           GROUP BY t.priority ORDER BY total DESC""",
-        (since,),
+        """SELECT t.priority AS category, SUM(tl.duration_minutes) AS total
+             FROM task_logs tl
+             JOIN tasks t ON tl.task_id = t.id
+            WHERE tl.logged_at >= ? AND t.user_id = ?
+         GROUP BY t.priority ORDER BY total DESC""",
+        (since, uid),
     ).fetchall()
 
-    # Task completion stats
     task_stats = conn.execute(
         """SELECT
-               COUNT(*) as total,
-               SUM(completed) as done,
-               SUM(CASE WHEN completed=0 THEN 1 ELSE 0 END) as pending
-           FROM tasks"""
+               COUNT(*) AS total,
+               SUM(completed) AS done,
+               SUM(CASE WHEN completed = 0 THEN 1 ELSE 0 END) AS pending
+             FROM tasks WHERE user_id = ?""",
+        (uid,),
     ).fetchone()
 
-    # Habit completion rate over last 7 days
     habit_count = conn.execute(
-        "SELECT COUNT(*) as n FROM habits WHERE active = 1"
+        "SELECT COUNT(*) AS n FROM habits WHERE active = 1 AND user_id = ?",
+        (uid,),
     ).fetchone()["n"]
 
     completions_7d = conn.execute(
-        """SELECT COUNT(*) as n FROM habit_completions
-           WHERE completion_date >= ?""",
-        (since,),
+        """SELECT COUNT(*) AS n FROM habit_completions hc
+             JOIN habits h ON hc.habit_id = h.id
+            WHERE hc.completion_date >= ? AND h.user_id = ?""",
+        (since, uid),
     ).fetchone()["n"]
 
     habit_rate = round(completions_7d / max(habit_count * 7, 1) * 100)
@@ -319,19 +480,22 @@ def analytics():
     })
 
 
-# ── Forecast ───────────────────────────────────────────────────────────────────
+# ── Forecast ──────────────────────────────────────────────────────────────────
 
 @app.route("/api/forecast")
-def get_forecast():
+@require_user
+def get_forecast(uid):
     conn = get_db()
     today = date.today()
-    since = str(today - timedelta(days=59))  # 60 days of context
+    since = str(today - timedelta(days=59))
 
     rows = conn.execute(
-        """SELECT logged_at AS date, SUM(duration_minutes) AS total
-           FROM task_logs WHERE logged_at >= ?
-           GROUP BY logged_at ORDER BY logged_at ASC""",
-        (since,),
+        """SELECT tl.logged_at AS date, SUM(tl.duration_minutes) AS total
+             FROM task_logs tl
+             JOIN tasks t ON tl.task_id = t.id
+            WHERE tl.logged_at >= ? AND t.user_id = ?
+         GROUP BY tl.logged_at ORDER BY tl.logged_at ASC""",
+        (since, uid),
     ).fetchall()
     conn.close()
 
