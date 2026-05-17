@@ -1402,6 +1402,120 @@ $("#tab-matrix").addEventListener("drop", async e => {
   loadMatrix();
 });
 
+// ── Matrix touch drag-and-drop (Safari / iOS) ─────────────────────────────────
+// The HTML5 drag API is not supported on touch devices. This parallel
+// implementation uses touchstart/touchmove/touchend to do the same thing:
+// a floating clone follows the finger and the quadrant under it highlights;
+// lifting the finger commits the move.
+
+let touchDragId  = null;   // task id being dragged (null = no drag in progress)
+let touchDragEl  = null;   // original <li> (dimmed while dragging)
+let touchClone   = null;   // absolutely-positioned visual clone
+let touchOffsetX = 0;      // finger offset from clone's top-left corner
+let touchOffsetY = 0;
+let touchOverQ   = null;   // quadrant currently under the finger
+let touchActive  = false;  // true once the movement threshold is crossed
+let touchStartX  = 0;
+let touchStartY  = 0;
+const TOUCH_DRAG_THRESHOLD = 8; // px — below this we let the browser handle scroll/tap
+
+(function wireMatrixTouch() {
+  const tab = $("#tab-matrix");
+
+  tab.addEventListener("touchstart", e => {
+    const li = e.target.closest(".matrix-task[data-id]");
+    if (!li || e.target.closest(".matrix-check")) return;
+    const t = e.touches[0];
+    touchDragEl  = li;
+    touchDragId  = Number(li.dataset.id);
+    touchActive  = false;
+    touchStartX  = t.clientX;
+    touchStartY  = t.clientY;
+    const r      = li.getBoundingClientRect();
+    touchOffsetX = t.clientX - r.left;
+    touchOffsetY = t.clientY - r.top;
+  }, { passive: true });
+
+  tab.addEventListener("touchmove", e => {
+    if (!touchDragEl) return;
+    const t = e.touches[0];
+
+    if (!touchActive) {
+      // Only commit to drag mode once the finger has moved enough — this
+      // lets short taps and vertical scrolls through untouched.
+      const dx = Math.abs(t.clientX - touchStartX);
+      const dy = Math.abs(t.clientY - touchStartY);
+      if (dx < TOUCH_DRAG_THRESHOLD && dy < TOUCH_DRAG_THRESHOLD) return;
+      touchActive = true;
+
+      // Build the floating clone
+      const r = touchDragEl.getBoundingClientRect();
+      touchClone = touchDragEl.cloneNode(true);
+      touchClone.classList.add("matrix-drag-clone");
+      Object.assign(touchClone.style, {
+        position:      "fixed",
+        left:          `${r.left}px`,
+        top:           `${r.top}px`,
+        width:         `${r.width}px`,
+        pointerEvents: "none",
+        zIndex:        "9999",
+      });
+      document.body.appendChild(touchClone);
+      touchDragEl.classList.add("dragging");
+    }
+
+    // Prevent page scroll while dragging
+    e.preventDefault();
+
+    // Move clone with the finger
+    touchClone.style.left = `${t.clientX - touchOffsetX}px`;
+    touchClone.style.top  = `${t.clientY - touchOffsetY}px`;
+
+    // Find the quadrant under the finger (hide clone so it doesn't block hit-test)
+    touchClone.style.visibility = "hidden";
+    const el = document.elementFromPoint(t.clientX, t.clientY);
+    touchClone.style.visibility = "";
+    const q = el?.closest(".matrix-quadrant") ?? null;
+    if (q !== touchOverQ) {
+      touchOverQ?.classList.remove("drag-over");
+      touchOverQ = q;
+      touchOverQ?.classList.add("drag-over");
+    }
+  }, { passive: false }); // passive:false so we can call preventDefault
+
+  async function onTouchEnd() {
+    const wasActive = touchActive;
+    const q         = touchOverQ;
+    const id        = touchDragId;
+
+    // Always clean up, regardless of outcome
+    touchClone?.remove();    touchClone  = null;
+    touchDragEl?.classList.remove("dragging"); touchDragEl = null;
+    $$(".matrix-quadrant.drag-over").forEach(el => el.classList.remove("drag-over"));
+    touchDragId = null; touchActive = false; touchOverQ = null;
+
+    if (!wasActive || !q || id == null) return;
+
+    const listEl = q.querySelector(".matrix-task-list");
+    const flags  = listEl && MATRIX_FLAGS[listEl.id];
+    if (!flags) return;
+
+    const task = matrixTasks.find(t => t.id === id);
+    if (!task) return;
+
+    // No-op if already in this quadrant
+    if (!!task.urgent === flags.urgent && !!task.important === flags.important) return;
+
+    const label = q.querySelector(".quadrant-label")?.textContent ?? "quadrant";
+    await api(`/api/tasks/${id}`, "PUT", { urgent: flags.urgent, important: flags.important });
+    toast(`Moved to "${label}"`);
+    loadMatrix();
+  }
+
+  tab.addEventListener("touchend",    onTouchEnd);
+  tab.addEventListener("touchcancel", onTouchEnd);
+})();
+
 // ── Toast notifications ────────────────────────────────────────────────────────
 
 function toast(msg, type = "success") {
