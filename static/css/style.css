@@ -1725,3 +1725,213 @@ button[type="submit"]:active,
   .nav-label { font-size: 9px; }
   .content { padding: 12px 10px calc(80px + env(safe-area-inset-bottom)) 10px; }
 }
+
+/* ── Sidebar user widget (signed-in identity + logout) ──────────────────── */
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  margin: 6px 0 10px;
+  background: var(--accent-dim);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+}
+.sidebar-user-name {
+  flex: 1;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sidebar-logout {
+  flex-shrink: 0;
+  width: 26px; height: 26px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.15s, background 0.15s, border-color 0.15s, transform 0.4s var(--spring);
+}
+.sidebar-logout:hover { color: var(--red); background: var(--red-dim); border-color: var(--red-dim); }
+.sidebar-logout:active { transform: scale(0.9); transition-duration: 0.08s; }
+
+/* ── Auth overlay ───────────────────────────────────────────────────────── */
+.auth-overlay {
+  position: fixed; inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--bg);
+  background-image:
+    radial-gradient(ellipse 800px 600px at 0% 0%,   rgba(124,106,247,0.10), transparent 60%),
+    radial-gradient(ellipse 700px 500px at 100% 100%, rgba(106,247,200,0.06), transparent 60%);
+  animation: authFade 0.35s var(--ease-out-quint);
+}
+@keyframes authFade {
+  from { opacity: 0; transform: scale(0.985); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.auth-card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 30px 26px 26px;
+  box-shadow: var(--shadow-md);
+}
+.auth-brand {
+  display: flex; flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 22px;
+  text-align: center;
+}
+.auth-brand-text {
+  font-family: 'Syne', sans-serif;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 50%, var(--cyan) 100%);
+  -webkit-background-clip: text;
+          background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+.auth-brand-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+
+.auth-tabs {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 4px;
+  margin-bottom: 22px;
+  background: var(--surface2);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  box-shadow: inset 0 1px 0 rgba(0,0,0,0.02);
+}
+.auth-tab-indicator {
+  position: absolute;
+  top: 4px; left: 4px;
+  width: calc(50% - 4px);
+  height: calc(100% - 8px);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  transition: transform 0.42s var(--spring);
+  pointer-events: none;
+}
+.auth-tabs[data-mode="signup"] .auth-tab-indicator { transform: translateX(100%); }
+.auth-tab {
+  position: relative; z-index: 1;
+  background: none; border: none;
+  padding: 9px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: 8px;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.2s, transform 0.4s var(--spring);
+}
+.auth-tab:active { transform: scale(0.96); transition-duration: 0.08s; }
+.auth-tab.active { color: var(--text); }
+
+.auth-form { display: flex; flex-direction: column; gap: 10px; }
+.auth-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.auth-input {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  outline: none;
+  letter-spacing: 0.01em;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+.auth-input::placeholder { color: var(--muted); font-weight: 500; }
+.auth-input:focus {
+  border-color: var(--accent);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+.auth-hint {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+  margin-top: -4px;
+}
+.auth-error {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--red);
+  background: var(--red-dim);
+  border: 1px solid var(--red-dim);
+  border-radius: 8px;
+  padding: 8px 10px;
+  letter-spacing: 0.01em;
+}
+.auth-submit {
+  margin-top: 8px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 18px;
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: -0.01em;
+  box-shadow: 0 4px 14px rgba(124,106,247,0.30);
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, box-shadow 0.2s, transform 0.4s var(--spring);
+}
+.auth-submit:hover  { background: var(--accent-light); box-shadow: 0 6px 18px rgba(124,106,247,0.40); }
+.auth-submit:active { transform: scale(0.97); transition-duration: 0.08s; }
+.auth-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+/* When the auth overlay is showing, hide the app behind it (and stop iOS
+   from scrolling the underlying content). */
+body.auth-visible { overflow: hidden; }
+body.auth-visible .sidebar,
+body.auth-visible .content,
+body.auth-visible #toast-container { visibility: hidden; }
+
+/* Mobile tightening */
+@media (max-width: 500px) {
+  .auth-card { padding: 24px 20px 22px; border-radius: 16px; }
+  .auth-brand-text { font-size: 26px; }
+}

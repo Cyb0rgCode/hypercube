@@ -43,6 +43,11 @@ async function api(path, method = "GET", body = null) {
   const opts = { method, headers: { "Content-Type": "application/json" } };
   if (body) opts.body = JSON.stringify(body);
   const res = await fetch(path, opts);
+  // Session expired or never started → boot the auth overlay and stop the caller.
+  if (res.status === 401 && !path.startsWith("/api/auth/")) {
+    showAuthOverlay();
+    throw new Error("unauthorized");
+  }
   if (res.status === 204) return null;
   return res.json();
 }
@@ -1272,6 +1277,147 @@ function escHtml(s) {
     .replace(/"/g, "&quot;");
 }
 
+// ── Auth (username-only, session cookie) ───────────────────────────────────────
+
+let authMode = "login";  // or "signup"
+
+function showAuthOverlay() {
+  const overlay = $("#auth-overlay");
+  if (!overlay) return;
+  overlay.hidden = false;
+  document.body.classList.add("auth-visible");
+  $("#sidebar-user").hidden = true;
+  // Focus the input on next tick so animation runs first.
+  setTimeout(() => { try { $("#auth-username").focus(); } catch (e) {} }, 60);
+}
+
+function hideAuthOverlay() {
+  const overlay = $("#auth-overlay");
+  if (!overlay) return;
+  overlay.hidden = true;
+  document.body.classList.remove("auth-visible");
+}
+
+function setSidebarUser(user) {
+  const box = $("#sidebar-user");
+  const name = $("#sidebar-user-name");
+  if (!box || !name) return;
+  if (user) {
+    name.textContent = "@" + user.username;
+    box.hidden = false;
+  } else {
+    box.hidden = true;
+  }
+}
+
+function setAuthMode(mode) {
+  authMode = mode === "signup" ? "signup" : "login";
+  const tabs = $(".auth-tabs");
+  if (tabs) tabs.dataset.mode = authMode;
+  $$(".auth-tab").forEach(t => {
+    const isActive = t.dataset.mode === authMode;
+    t.classList.toggle("active", isActive);
+    t.setAttribute("aria-selected", isActive ? "true" : "false");
+  });
+  const submitLabel = $(".auth-submit-label");
+  if (submitLabel) submitLabel.textContent = authMode === "signup" ? "Create account" : "Continue";
+  clearAuthError();
+}
+
+function clearAuthError() {
+  const el = $("#auth-error");
+  if (!el) return;
+  el.hidden = true;
+  el.textContent = "";
+}
+
+function setAuthError(msg) {
+  const el = $("#auth-error");
+  if (!el) return;
+  el.textContent = msg;
+  el.hidden = false;
+}
+
+async function authFetch(path, body) {
+  const res = await fetch(path, {
+    method: body ? "POST" : "GET",
+    headers: { "Content-Type": "application/json" },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const data = res.status === 204 ? null : await res.json().catch(() => ({}));
+  return { ok: res.ok, status: res.status, data };
+}
+
+async function onLoggedIn(user) {
+  setSidebarUser(user);
+  hideAuthOverlay();
+  // Boot the dashboard now that we have a session.
+  try { await loadDashboard(); } catch (e) { /* api() already handled 401 */ }
+}
+
+async function handleAuthSubmit(e) {
+  e.preventDefault();
+  clearAuthError();
+  const username = $("#auth-username").value.trim();
+  if (!/^[A-Za-z0-9_]{2,32}$/.test(username)) {
+    setAuthError("Username must be 2–32 characters: letters, numbers, underscore.");
+    return;
+  }
+  const submitBtn = $("#auth-submit");
+  submitBtn.disabled = true;
+  const path = authMode === "signup" ? "/api/auth/signup" : "/api/auth/login";
+  try {
+    const { ok, status, data } = await authFetch(path, { username });
+    if (!ok) {
+      if (status === 404 && authMode === "login") {
+        setAuthError("No account with that username. Try Sign up instead.");
+      } else if (status === 409) {
+        setAuthError("That username is taken. Try Sign in instead.");
+      } else {
+        setAuthError((data && data.error) || "Something went wrong. Try again.");
+      }
+      return;
+    }
+    await onLoggedIn(data.user);
+  } catch (err) {
+    setAuthError("Network error. Try again.");
+  } finally {
+    submitBtn.disabled = false;
+  }
+}
+
+async function handleLogout() {
+  try { await authFetch("/api/auth/logout", {}); } catch (e) {}
+  setSidebarUser(null);
+  showAuthOverlay();
+}
+
+function wireAuthUI() {
+  // Tab switching
+  $$(".auth-tab").forEach(t => t.addEventListener("click", () => setAuthMode(t.dataset.mode)));
+  // Submit
+  const form = $("#auth-form");
+  if (form) form.addEventListener("submit", handleAuthSubmit);
+  // Logout
+  const logout = $("#logout-btn");
+  if (logout) logout.addEventListener("click", handleLogout);
+  setAuthMode("login");
+}
+
 // ── Init ───────────────────────────────────────────────────────────────────────
 
-loadDashboard();
+async function bootstrap() {
+  wireAuthUI();
+  try {
+    const { data } = await authFetch("/api/auth/me");
+    if (data && data.user) {
+      await onLoggedIn(data.user);
+    } else {
+      showAuthOverlay();
+    }
+  } catch (e) {
+    showAuthOverlay();
+  }
+}
+
+bootstrap();

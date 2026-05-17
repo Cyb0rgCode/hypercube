@@ -12,9 +12,18 @@ def get_db():
     return conn
 
 
+DEFAULT_OWNER = "sofien"
+
+
 def init_db():
     conn = get_db()
     conn.executescript("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL UNIQUE COLLATE NOCASE,
+            created_at TEXT NOT NULL DEFAULT (date('now'))
+        );
+
         CREATE TABLE IF NOT EXISTS tasks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT NOT NULL,
@@ -69,19 +78,70 @@ def init_db():
     """)
     conn.commit()
 
-    # Migrations — safe to run on existing DBs
-    for col, typedef in [
-        ("urgent",             "INTEGER NOT NULL DEFAULT 0"),
-        ("important",          "INTEGER NOT NULL DEFAULT 0"),
-        ("category",           "TEXT NOT NULL DEFAULT ''"),
-        ("estimated_minutes",  "INTEGER NOT NULL DEFAULT 0"),
-        ("task_type",          "TEXT NOT NULL DEFAULT ''"),
-        ("chapter",            "TEXT NOT NULL DEFAULT ''"),
-    ]:
-        try:
-            conn.execute(f"ALTER TABLE tasks ADD COLUMN {col} {typedef}")
-            conn.commit()
-        except sqlite3.OperationalError:
-            pass  # column already exists
+    # Per-table column migrations — safe to run on existing DBs.
+    column_migrations = {
+        "tasks": [
+            ("urgent",            "INTEGER NOT NULL DEFAULT 0"),
+            ("important",         "INTEGER NOT NULL DEFAULT 0"),
+            ("category",          "TEXT NOT NULL DEFAULT ''"),
+            ("estimated_minutes", "INTEGER NOT NULL DEFAULT 0"),
+            ("task_type",         "TEXT NOT NULL DEFAULT ''"),
+            ("chapter",           "TEXT NOT NULL DEFAULT ''"),
+            ("user_id",           "INTEGER"),
+        ],
+        "habits":    [("user_id", "INTEGER")],
+        "goals":     [("user_id", "INTEGER")],
+        "time_logs": [("user_id", "INTEGER")],
+    }
+    for table, cols in column_migrations.items():
+        for col, typedef in cols:
+            try:
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {typedef}")
+                conn.commit()
+            except sqlite3.OperationalError:
+                pass  # column already exists
+
+    # Ensure default owner exists and backfill any unowned rows to them.
+    # This runs once: after the first run, all rows have user_id set, so
+    # subsequent UPDATE ... WHERE user_id IS NULL is a cheap no-op.
+    conn.execute(
+        "INSERT OR IGNORE INTO users (username) VALUES (?)",
+        (DEFAULT_OWNER,),
+    )
+    conn.commit()
+    owner_id = conn.execute(
+        "SELECT id FROM users WHERE username = ? COLLATE NOCASE",
+        (DEFAULT_OWNER,),
+    ).fetchone()["id"]
+    for table in ("tasks", "habits", "goals", "time_logs"):
+        conn.execute(
+            f"UPDATE {table} SET user_id = ? WHERE user_id IS NULL",
+            (owner_id,),
+        )
+    conn.commit()
 
     conn.close()
+
+
+def get_user_by_username(username):
+    """Return user row (or None) by case-insensitive username."""
+    conn = get_db()
+    row = conn.execute(
+        "SELECT id, username, created_at FROM users WHERE username = ? COLLATE NOCASE",
+        (username,),
+    ).fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
+def create_user(username):
+    """Insert a new user. Raises sqlite3.IntegrityError if username is taken."""
+    conn = get_db()
+    cur = conn.execute("INSERT INTO users (username) VALUES (?)", (username,))
+    conn.commit()
+    row = conn.execute(
+        "SELECT id, username, created_at FROM users WHERE id = ?",
+        (cur.lastrowid,),
+    ).fetchone()
+    conn.close()
+    return dict(row)

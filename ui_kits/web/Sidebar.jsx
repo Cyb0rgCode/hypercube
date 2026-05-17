@@ -28,7 +28,29 @@ function ThemeToggle({ theme, onChange }) {
   );
 }
 
-function Sidebar({ active, onChange, theme, onThemeChange }) {
+function SidebarUser({ user, onLogout }) {
+  if (!user) return null;
+  return (
+    <div className="sidebar-user">
+      <span className="sidebar-user-name">@{user}</span>
+      <button
+        type="button"
+        className="sidebar-logout"
+        onClick={onLogout}
+        aria-label="Sign out"
+        title="Sign out"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <polyline points="16 17 21 12 16 7"/>
+          <line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+      </button>
+    </div>
+  );
+}
+
+function Sidebar({ active, onChange, theme, onThemeChange, user, onLogout }) {
   const navRef = React.useRef(null);
   const items = [
     { id: "dashboard", label: "Dashboard",     icon: <Icon.Dashboard /> },
@@ -72,6 +94,7 @@ function Sidebar({ active, onChange, theme, onThemeChange }) {
         ))}
       </nav>
       <div className="sidebar-foot">
+        <SidebarUser user={user} onLogout={onLogout}/>
         <ThemeToggle theme={theme} onChange={onThemeChange}/>
         <div className="sidebar-date">{dateMedium()}</div>
       </div>
@@ -81,3 +104,4 @@ function Sidebar({ active, onChange, theme, onThemeChange }) {
 
 window.Sidebar = Sidebar;
 window.ThemeToggle = ThemeToggle;
+window.SidebarUser = SidebarUser;
