@@ -1201,9 +1201,8 @@ async function loadHabits() {
   }
   list.innerHTML = habits.map(h => `
     <li data-id="${h.id}">
-      <button class="habit-check ${h.done_today ? "done" : ""}" data-action="toggle" title="Toggle today">
-        ${h.done_today ? "✓" : ""}
-      </button>
+      <button class="habit-check ${h.done_today ? "done" : ""}" data-action="toggle"
+              aria-label="${h.done_today ? "Mark incomplete" : "Mark complete"}"></button>
       <span class="item-title">${escHtml(h.name)}</span>
       <span class="streak-badge">${h.streak > 0 ? `🔥 ${h.streak}d` : ""}</span>
       <button class="btn-icon" data-action="delete" title="Delete">✕</button>
