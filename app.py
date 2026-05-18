@@ -133,6 +133,27 @@ def auth_logout():
     return jsonify({"ok": True})
 
 
+@app.route("/api/auth/delete", methods=["POST"])
+def auth_delete():
+    uid = current_user_id()
+    if not uid:
+        return jsonify({"error": "not signed in"}), 401
+    conn = get_db()
+    # Cascade-delete all user data
+    conn.execute("DELETE FROM task_logs WHERE task_id IN (SELECT id FROM tasks WHERE user_id = ?)", (uid,))
+    conn.execute("DELETE FROM tasks WHERE user_id = ?", (uid,))
+    conn.execute(
+        "DELETE FROM habit_completions WHERE habit_id IN (SELECT id FROM habits WHERE user_id = ?)", (uid,)
+    )
+    conn.execute("DELETE FROM habits WHERE user_id = ?", (uid,))
+    conn.execute("DELETE FROM goals WHERE user_id = ?", (uid,))
+    conn.execute("DELETE FROM users WHERE id = ?", (uid,))
+    conn.commit()
+    conn.close()
+    session.pop("user_id", None)
+    return jsonify({"ok": True})
+
+
 # ── Index ─────────────────────────────────────────────────────────────────────
 
 @app.route("/")

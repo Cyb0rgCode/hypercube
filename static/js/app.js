@@ -1875,6 +1875,19 @@ function wireAuthUI() {
   // Logout
   const logout = $("#logout-btn");
   if (logout) logout.addEventListener("click", handleLogout);
+  // Delete account
+  const del = $("#delete-account-btn");
+  if (del) del.addEventListener("click", async () => {
+    if (!confirm("Permanently delete your account and all data? This cannot be undone.")) return;
+    del.disabled = true;
+    try {
+      await authFetch("/api/auth/delete", {});
+      setSidebarUser(null);
+      showAuthOverlay();
+    } finally {
+      del.disabled = false;
+    }
+  });
   setAuthMode("login");
 }
 
