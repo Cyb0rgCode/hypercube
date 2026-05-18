@@ -1878,6 +1878,9 @@ function wireAuthUI() {
   // Delete account
   const del = $("#delete-account-btn");
   if (del) del.addEventListener("click", async () => {
+    const pwd = prompt("Enter password to reset account data:");
+    if (pwd === null) return;
+    if (pwd !== "claude") { alert("Wrong password."); return; }
     if (!confirm("Reset all your data? Tasks, habits and goals will be permanently cleared. Your account stays.")) return;
     del.disabled = true;
     try {
