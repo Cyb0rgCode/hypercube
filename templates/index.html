@@ -23,16 +23,34 @@
     <div class="logo" id="sidebar-collapse-btn" role="button" tabindex="0" title="Collapse sidebar" aria-label="Collapse sidebar">
       <span class="logo-text"><span>Hypercube</span></span>
       <span class="logo-cube" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
-          <!-- outer cube -->
-          <rect x="2" y="2" width="20" height="20" rx="0.5"/>
-          <!-- inner cube -->
-          <rect x="7" y="7" width="10" height="10" rx="0.5"/>
-          <!-- connecting edges (4D projection) -->
-          <line x1="2"  y1="2"  x2="7"  y2="7"/>
-          <line x1="22" y1="2"  x2="17" y2="7"/>
-          <line x1="22" y1="22" x2="17" y2="17"/>
-          <line x1="2"  y1="22" x2="7"  y2="17"/>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+          <!-- outer 3-cube: front face -->
+          <path d="M2,8 L14,8 L14,20 L2,20 Z"/>
+          <!-- outer 3-cube: back face -->
+          <path d="M8,2 L20,2 L20,14 L8,14 Z"/>
+          <!-- outer 3-cube: depth edges -->
+          <line x1="2"  y1="8"  x2="8"  y2="2"/>
+          <line x1="14" y1="8"  x2="20" y2="2"/>
+          <line x1="14" y1="20" x2="20" y2="14"/>
+          <line x1="2"  y1="20" x2="8"  y2="14"/>
+          <!-- inner 3-cube: front face -->
+          <path d="M7,10 L12,10 L12,15 L7,15 Z"/>
+          <!-- inner 3-cube: back face -->
+          <path d="M10,7 L15,7 L15,12 L10,12 Z"/>
+          <!-- inner 3-cube: depth edges -->
+          <line x1="7"  y1="10" x2="10" y2="7"/>
+          <line x1="12" y1="10" x2="15" y2="7"/>
+          <line x1="12" y1="15" x2="15" y2="12"/>
+          <line x1="7"  y1="15" x2="10" y2="12"/>
+          <!-- 4th-dimension edges (outer→inner) -->
+          <line x1="2"  y1="8"  x2="7"  y2="10"/>
+          <line x1="14" y1="8"  x2="12" y2="10"/>
+          <line x1="14" y1="20" x2="12" y2="15"/>
+          <line x1="2"  y1="20" x2="7"  y2="15"/>
+          <line x1="8"  y1="2"  x2="10" y2="7"/>
+          <line x1="20" y1="2"  x2="15" y2="7"/>
+          <line x1="20" y1="14" x2="15" y2="12"/>
+          <line x1="8"  y1="14" x2="10" y2="12"/>
         </svg>
       </span>
     </div>
