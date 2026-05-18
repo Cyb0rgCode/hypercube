@@ -1,0 +1,17 @@
+{
+  "name": "ICE",
+  "short_name": "ICE",
+  "description": "Personal productivity dashboard — tasks, habits, goals.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0f",
+  "theme_color": "#0a0a0f",
+  "icons": [
+    {
+      "src": "/static/img/icon.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
