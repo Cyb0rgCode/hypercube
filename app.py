@@ -339,13 +339,18 @@ def toggle_habit(uid, habit_id):
         conn.close()
         return jsonify({"error": "habit not found"}), 404
     existing = conn.execute(
-        "SELECT id, check_count FROM habit_completions WHERE habit_id = ? AND completion_date = ?",
+        "SELECT id, check_count, duration_minutes FROM habit_completions WHERE habit_id = ? AND completion_date = ?",
         (habit_id, today),
     ).fetchone()
     if existing:
+        # Add one unit of time per new check (unit = total ÷ current count)
+        time_unit = existing["duration_minutes"] // existing["check_count"] if existing["check_count"] > 0 else 0
         conn.execute(
-            "UPDATE habit_completions SET check_count = check_count + 1 WHERE id = ?",
-            (existing["id"],),
+            """UPDATE habit_completions
+                  SET check_count      = check_count + 1,
+                      duration_minutes = duration_minutes + ?
+                WHERE id = ?""",
+            (time_unit, existing["id"]),
         )
         check_count = existing["check_count"] + 1
     else:
