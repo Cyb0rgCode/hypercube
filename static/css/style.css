@@ -1106,6 +1106,71 @@ h2 {
   font-family: 'JetBrains Mono', monospace;
 }
 
+/* Habit row right-side cluster: time chip + log btn + streak + delete */
+.habit-row-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.habit-time-chip {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-dim);
+  border: 1px solid rgba(var(--accent-rgb), 0.22);
+  border-radius: 20px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+
+.habit-log-btn {
+  font-size: 13px;
+  opacity: 0.55;
+  transition: opacity 0.15s;
+}
+.habit-log-btn:hover { opacity: 1; }
+
+/* Inline time-logging form that slides under the habit row */
+.habit-time-form {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 0 2px 36px;
+  width: 100%;
+}
+.habit-time-input {
+  width: 80px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border-soft);
+  background: var(--bg-2);
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+}
+.habit-time-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+.habit-log-submit {
+  padding: 5px 12px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-family: 'Syne', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.4s var(--spring);
+}
+.habit-log-submit:hover { opacity: 0.88; }
+.habit-log-submit:active { transform: scale(0.94); transition-duration: 0.08s; }
+
 @media (max-width: 900px) {
   .stat-cards { grid-template-columns: repeat(2, 1fr); }
   .charts-row { grid-template-columns: 1fr; }

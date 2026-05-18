@@ -1204,8 +1204,12 @@ async function loadHabits() {
       <button class="habit-check ${h.done_today ? "done" : ""}" data-action="toggle"
               aria-label="${h.done_today ? "Mark incomplete" : "Mark complete"}"></button>
       <span class="item-title">${escHtml(h.name)}</span>
-      <span class="streak-badge">${h.streak > 0 ? `🔥 ${h.streak}d` : ""}</span>
-      <button class="btn-icon" data-action="delete" title="Delete">✕</button>
+      <div class="habit-row-right">
+        ${h.time_logged_today > 0 ? `<span class="habit-time-chip">⏱ ${fmtTime(h.time_logged_today)}</span>` : ""}
+        <button class="btn-icon habit-log-btn" data-action="log-time" title="Log time">⏱</button>
+        ${h.streak > 0 ? `<span class="streak-badge">🔥 ${h.streak}d</span>` : ""}
+        <button class="btn-icon" data-action="delete" title="Delete">✕</button>
+      </div>
     </li>
   `).join("");
 }
@@ -1225,11 +1229,46 @@ $("#habit-list").addEventListener("click", async e => {
   if (!li) return;
   const id = Number(li.dataset.id);
   const action = e.target.dataset.action || e.target.closest("[data-action]")?.dataset.action;
+
   if (action === "toggle") {
     const res = await api(`/api/habits/${id}/toggle`, "POST");
     await loadHabits();
     if (res?.done_today) bounceCheck($(`#habit-list li[data-id="${id}"]`));
   }
+
+  if (action === "log-time") {
+    // Toggle inline time form — close if already open
+    const existing = li.querySelector(".habit-time-form");
+    if (existing) { existing.remove(); return; }
+    const form = document.createElement("div");
+    form.className = "habit-time-form";
+    form.innerHTML = `
+      <input type="number" class="habit-time-input" placeholder="minutes" min="1" max="480" inputmode="numeric">
+      <button class="habit-log-submit" data-action="submit-time">Log</button>
+      <button class="btn-icon" data-action="cancel-time" title="Cancel">✕</button>
+    `;
+    li.appendChild(form);
+    const inp = form.querySelector(".habit-time-input");
+    inp.focus();
+    inp.addEventListener("keydown", ev => {
+      if (ev.key === "Enter") form.querySelector("[data-action='submit-time']").click();
+      if (ev.key === "Escape") form.querySelector("[data-action='cancel-time']").click();
+    });
+  }
+
+  if (action === "submit-time") {
+    const input = li.querySelector(".habit-time-input");
+    const minutes = parseInt(input?.value, 10);
+    if (!minutes || minutes < 1) { input?.focus(); return; }
+    await api(`/api/habits/${id}/log`, "POST", { minutes });
+    toast(`⏱ ${fmtTime(minutes)} logged`);
+    loadHabits();
+  }
+
+  if (action === "cancel-time") {
+    li.querySelector(".habit-time-form")?.remove();
+  }
+
   if (action === "delete") {
     await api(`/api/habits/${id}`, "DELETE");
     loadHabits();

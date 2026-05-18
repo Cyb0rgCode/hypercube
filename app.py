@@ -281,11 +281,12 @@ def get_habits(uid):
     result = []
     for h in habits:
         h = dict(h)
-        done_today = conn.execute(
-            "SELECT 1 FROM habit_completions WHERE habit_id = ? AND completion_date = ?",
+        comp = conn.execute(
+            "SELECT duration_minutes FROM habit_completions WHERE habit_id = ? AND completion_date = ?",
             (h["id"], today),
         ).fetchone()
-        h["done_today"] = bool(done_today)
+        h["done_today"] = bool(comp)
+        h["time_logged_today"] = comp["duration_minutes"] if comp else 0
         h["streak"] = _calc_streak(conn, h["id"])
         result.append(h)
     conn.close()
@@ -355,6 +356,44 @@ def toggle_habit(uid, habit_id):
     streak = _calc_streak(conn, habit_id)
     conn.close()
     return jsonify({"done_today": done, "streak": streak})
+
+
+@app.route("/api/habits/<int:habit_id>/log", methods=["POST"])
+@require_user
+def log_habit_time(uid, habit_id):
+    minutes = int((request.json or {}).get("minutes", 0))
+    if minutes <= 0:
+        return jsonify({"error": "minutes must be positive"}), 400
+    today = str(date.today())
+    conn = get_db()
+    owner = conn.execute(
+        "SELECT 1 FROM habits WHERE id = ? AND user_id = ?", (habit_id, uid)
+    ).fetchone()
+    if not owner:
+        conn.close()
+        return jsonify({"error": "habit not found"}), 404
+    existing = conn.execute(
+        "SELECT id FROM habit_completions WHERE habit_id = ? AND completion_date = ?",
+        (habit_id, today),
+    ).fetchone()
+    if existing:
+        conn.execute(
+            "UPDATE habit_completions SET duration_minutes = duration_minutes + ? WHERE id = ?",
+            (minutes, existing["id"]),
+        )
+    else:
+        # Log time also marks the habit done for today
+        conn.execute(
+            "INSERT INTO habit_completions (habit_id, completion_date, duration_minutes) VALUES (?, ?, ?)",
+            (habit_id, today, minutes),
+        )
+    conn.commit()
+    row = conn.execute(
+        "SELECT duration_minutes FROM habit_completions WHERE habit_id = ? AND completion_date = ?",
+        (habit_id, today),
+    ).fetchone()
+    conn.close()
+    return jsonify({"time_logged_today": row["duration_minutes"]})
 
 
 @app.route("/api/habits/<int:habit_id>", methods=["DELETE"])
