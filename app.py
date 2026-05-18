@@ -135,11 +135,17 @@ def auth_logout():
 
 @app.route("/api/auth/reset", methods=["POST"])
 def auth_reset():
-    uid = current_user_id()
-    if not uid:
-        return jsonify({"error": "not signed in"}), 401
+    username = _normalize_username((request.json or {}).get("username", ""))
+    if not username:
+        return jsonify({"error": "username required"}), 400
     conn = get_db()
-    # Wipe all data but keep the user account
+    user = conn.execute(
+        "SELECT id FROM users WHERE username = ? COLLATE NOCASE", (username,)
+    ).fetchone()
+    if not user:
+        conn.close()
+        return jsonify({"error": "user not found"}), 404
+    uid = user["id"]
     conn.execute("DELETE FROM task_logs WHERE task_id IN (SELECT id FROM tasks WHERE user_id = ?)", (uid,))
     conn.execute("DELETE FROM tasks WHERE user_id = ?", (uid,))
     conn.execute(

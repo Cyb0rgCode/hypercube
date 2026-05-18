@@ -1878,16 +1878,17 @@ function wireAuthUI() {
   // Delete account
   const del = $("#delete-account-btn");
   if (del) del.addEventListener("click", async () => {
-    const pwd = prompt("Enter password to reset account data:");
+    const username = $("#auth-username").value.trim();
+    if (!username) { alert("Enter your username first."); $("#auth-username").focus(); return; }
+    const pwd = prompt("Enter reset password:");
     if (pwd === null) return;
     if (pwd !== "claude") { alert("Wrong password."); return; }
-    if (!confirm("Reset all your data? Tasks, habits and goals will be permanently cleared. Your account stays.")) return;
+    if (!confirm(`Reset all data for "${username}"? Tasks, habits and goals will be permanently cleared.`)) return;
     del.disabled = true;
     try {
-      await authFetch("/api/auth/reset", {});
+      const { ok, data } = await authFetch("/api/auth/reset", { username });
+      if (!ok) { alert(data?.error || "Reset failed."); return; }
       toast("Account data cleared");
-      hideAuthOverlay();
-      loadDashboard();
     } finally {
       del.disabled = false;
     }
