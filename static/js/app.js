@@ -13,6 +13,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (theme === "dark") document.documentElement.setAttribute("data-theme", "dark");
     else document.documentElement.removeAttribute("data-theme");
     localStorage.setItem("theme", theme);
+    // Keep Safari's URL bar color in sync with the page background
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.content = theme === "dark" ? "#0a0a0f" : "#f6f6fa";
   }
 
   const currentTheme = localStorage.getItem("theme") || "light";
