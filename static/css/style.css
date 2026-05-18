@@ -391,9 +391,12 @@ body.sidebar-collapsed .nav-btn {
   justify-content: center;
   padding-left: 0;
   padding-right: 0;
+  gap: 0;
 }
 body.sidebar-collapsed .logo {
   justify-content: center;
+  padding: 0;
+  gap: 0;
 }
 body.sidebar-collapsed .sidebar-foot {
   display: none;
