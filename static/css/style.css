@@ -1170,20 +1170,7 @@ h2 {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-dim);
 }
-.habit-log-submit {
-  padding: 5px 12px;
-  border-radius: 8px;
-  background: var(--accent);
-  color: var(--on-accent);
-  font-family: 'Syne', sans-serif;
-  font-size: 12px;
-  font-weight: 700;
-  border: none;
-  cursor: pointer;
-  transition: opacity 0.15s, transform 0.4s var(--spring);
-}
-.habit-log-submit:hover { opacity: 0.88; }
-.habit-log-submit:active { transform: scale(0.94); transition-duration: 0.08s; }
+/* habit-log-submit removed — time input now commits on Enter/blur */
 
 @media (max-width: 900px) {
   .stat-cards { grid-template-columns: repeat(2, 1fr); }

@@ -399,6 +399,27 @@ def uncheck_habit(uid, habit_id):
     return jsonify({"done_today": check_count > 0, "check_count": check_count, "streak": streak})
 
 
+@app.route("/api/habits/<int:habit_id>/reset", methods=["POST"])
+@require_user
+def reset_habit(uid, habit_id):
+    """Completely remove today's completion (ignores check count)."""
+    today = str(date.today())
+    conn = get_db()
+    owner = conn.execute(
+        "SELECT 1 FROM habits WHERE id = ? AND user_id = ?", (habit_id, uid)
+    ).fetchone()
+    if not owner:
+        conn.close()
+        return jsonify({"error": "habit not found"}), 404
+    conn.execute(
+        "DELETE FROM habit_completions WHERE habit_id = ? AND completion_date = ?",
+        (habit_id, today),
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({"done_today": False, "check_count": 0})
+
+
 @app.route("/api/habits/<int:habit_id>/log", methods=["POST"])
 @require_user
 def log_habit_time(uid, habit_id):

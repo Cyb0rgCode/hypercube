@@ -1222,9 +1222,9 @@ async function loadHabits() {
 let suppressHabitClick = false;
 
 function wireHabitLongPress() {
+  // Long press on the CHECK BUTTON → -1 count (uncheck one step)
   $$("#habit-list .habit-check").forEach(btn => {
     let timer = null;
-
     const start = () => {
       timer = setTimeout(async () => {
         timer = null;
@@ -1237,18 +1237,44 @@ function wireHabitLongPress() {
         await loadHabits();
       }, 500);
     };
-
     const cancel = () => {
       if (timer) { clearTimeout(timer); timer = null; }
       btn.classList.remove("press-hold");
     };
-
     btn.addEventListener("mousedown",   start);
     btn.addEventListener("touchstart",  start, { passive: true });
     btn.addEventListener("mouseup",     cancel);
     btn.addEventListener("mouseleave",  cancel);
     btn.addEventListener("touchend",    cancel);
     btn.addEventListener("touchcancel", cancel);
+  });
+
+  // Long press on the HABIT ROW itself → full reset (ignores counter)
+  $$("#habit-list li[data-id]").forEach(li => {
+    let timer = null;
+    const start = (e) => {
+      // Only trigger from the row background, not from buttons / inputs
+      if (e.target.closest("button, input, .habit-time-form")) return;
+      timer = setTimeout(async () => {
+        timer = null;
+        const id = Number(li.dataset.id);
+        li.classList.add("press-hold");
+        navigator.vibrate?.(40);
+        await api(`/api/habits/${id}/reset`, "POST");
+        toast("Habit reset");
+        await loadHabits();
+      }, 600);
+    };
+    const cancel = () => {
+      if (timer) { clearTimeout(timer); timer = null; }
+      li.classList.remove("press-hold");
+    };
+    li.addEventListener("mousedown",   start);
+    li.addEventListener("touchstart",  start, { passive: true });
+    li.addEventListener("mouseup",     cancel);
+    li.addEventListener("mouseleave",  cancel);
+    li.addEventListener("touchend",    cancel);
+    li.addEventListener("touchcancel", cancel);
   });
 }
 
@@ -1276,32 +1302,34 @@ $("#habit-list").addEventListener("click", async e => {
   }
 
   if (action === "log-time") {
-    // Toggle inline time form — close if already open
-    const existing = li.querySelector(".habit-time-form");
-    if (existing) { existing.remove(); return; }
+    // Close any open time input elsewhere
+    $$("#habit-list .habit-time-form").forEach(f => f.remove());
+    // Build tiny popover right on the button
+    const triggerBtn = e.target.closest("[data-action='log-time']");
     const form = document.createElement("div");
     form.className = "habit-time-form";
     form.innerHTML = `
-      <input type="number" class="habit-time-input" placeholder="minutes" min="1" max="480" inputmode="numeric">
-      <button class="habit-log-submit" data-action="submit-time">Log</button>
+      <input type="number" class="habit-time-input" placeholder="min" min="1" max="480" inputmode="numeric">
       <button class="btn-icon" data-action="cancel-time" title="Cancel">✕</button>
     `;
     li.appendChild(form);
     const inp = form.querySelector(".habit-time-input");
     inp.focus();
-    inp.addEventListener("keydown", ev => {
-      if (ev.key === "Enter") form.querySelector("[data-action='submit-time']").click();
-      if (ev.key === "Escape") form.querySelector("[data-action='cancel-time']").click();
-    });
-  }
 
-  if (action === "submit-time") {
-    const input = li.querySelector(".habit-time-input");
-    const minutes = parseInt(input?.value, 10);
-    if (!minutes || minutes < 1) { input?.focus(); return; }
-    await api(`/api/habits/${id}/log`, "POST", { minutes });
-    toast(`⏱ ${fmtTime(minutes)} logged`);
-    loadHabits();
+    const commit = async () => {
+      const minutes = parseInt(inp.value, 10);
+      form.remove();
+      if (!minutes || minutes < 1) return;
+      await api(`/api/habits/${id}/log`, "POST", { minutes });
+      toast(`⏱ ${fmtTime(minutes)} logged`);
+      loadHabits();
+    };
+
+    inp.addEventListener("keydown", ev => {
+      if (ev.key === "Enter")  { ev.preventDefault(); commit(); }
+      if (ev.key === "Escape") form.remove();
+    });
+    inp.addEventListener("blur", () => setTimeout(commit, 120));
   }
 
   if (action === "cancel-time") {
