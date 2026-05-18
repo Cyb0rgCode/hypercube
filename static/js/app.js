@@ -417,9 +417,10 @@ function renderPriorityChart(data) {
   canvas.style.display = "";
   const ctx = canvas.getContext("2d");
   const tc = themeChartColors();
-  const colorMap = { high: tc.red, medium: tc.yellow, low: tc.green };
+  const colorMap = { high: tc.red, medium: tc.yellow, low: tc.green, habit: tc.accent };
+  const labelMap = { high: "High", medium: "Medium", low: "Low", habit: "Habits" };
   const colors = data.map(d => colorMap[d.category] || tc.accent);
-  const labels = data.map(d => d.category.charAt(0).toUpperCase() + d.category.slice(1));
+  const labels = data.map(d => labelMap[d.category] || (d.category.charAt(0).toUpperCase() + d.category.slice(1)));
   const values = data.map(d => d.total);
 
   // PERF: update in place instead of destroy + recreate
@@ -1201,8 +1202,11 @@ async function loadHabits() {
   }
   list.innerHTML = habits.map(h => `
     <li data-id="${h.id}">
-      <button class="habit-check ${h.done_today ? "done" : ""}" data-action="toggle"
-              aria-label="${h.done_today ? "Mark incomplete" : "Mark complete"}"></button>
+      <button class="habit-check ${h.check_count_today > 0 ? "done" : ""}" data-action="toggle"
+              aria-label="Check habit"></button>
+      ${h.check_count_today > 0
+          ? `<span class="habit-count-badge">${h.check_count_today}×</span>`
+          : ""}
       <span class="item-title">${escHtml(h.name)}</span>
       <div class="habit-row-right">
         ${h.time_logged_today > 0 ? `<span class="habit-time-chip">⏱ ${fmtTime(h.time_logged_today)}</span>` : ""}
@@ -1212,6 +1216,40 @@ async function loadHabits() {
       </div>
     </li>
   `).join("");
+  wireHabitLongPress();
+}
+
+let suppressHabitClick = false;
+
+function wireHabitLongPress() {
+  $$("#habit-list .habit-check").forEach(btn => {
+    let timer = null;
+
+    const start = () => {
+      timer = setTimeout(async () => {
+        timer = null;
+        suppressHabitClick = true;
+        const li = btn.closest("li");
+        const id = Number(li.dataset.id);
+        btn.classList.add("press-hold");
+        navigator.vibrate?.(25);
+        await api(`/api/habits/${id}/uncheck`, "POST");
+        await loadHabits();
+      }, 500);
+    };
+
+    const cancel = () => {
+      if (timer) { clearTimeout(timer); timer = null; }
+      btn.classList.remove("press-hold");
+    };
+
+    btn.addEventListener("mousedown",   start);
+    btn.addEventListener("touchstart",  start, { passive: true });
+    btn.addEventListener("mouseup",     cancel);
+    btn.addEventListener("mouseleave",  cancel);
+    btn.addEventListener("touchend",    cancel);
+    btn.addEventListener("touchcancel", cancel);
+  });
 }
 
 $("#habit-form").addEventListener("submit", async e => {
@@ -1231,9 +1269,10 @@ $("#habit-list").addEventListener("click", async e => {
   const action = e.target.dataset.action || e.target.closest("[data-action]")?.dataset.action;
 
   if (action === "toggle") {
+    if (suppressHabitClick) { suppressHabitClick = false; return; }
     const res = await api(`/api/habits/${id}/toggle`, "POST");
     await loadHabits();
-    if (res?.done_today) bounceCheck($(`#habit-list li[data-id="${id}"]`));
+    bounceCheck($(`#habit-list li[data-id="${id}"]`));
   }
 
   if (action === "log-time") {
