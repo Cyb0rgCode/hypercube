@@ -368,12 +368,13 @@ body.sidebar-collapsed .logo::after {
   line-height: 1;
 }
 
-/* Collapsed state */
+/* ── Collapsed state ── */
 body.sidebar-collapsed .sidebar {
   width: 64px;
 }
 body.sidebar-collapsed .content {
   margin-left: 64px;
+  width: calc(100% - 64px);
 }
 body.sidebar-collapsed .logo-text,
 body.sidebar-collapsed .sidebar-date,
@@ -383,13 +384,18 @@ body.sidebar-collapsed .nav-label {
   overflow: hidden;
   pointer-events: none;
 }
+/* Icon-only nav tiles */
 body.sidebar-collapsed .nav-btn {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  margin: 0 auto;
   justify-content: center;
-  padding-left: 0;
-  padding-right: 0;
   gap: 0;
 }
+/* Logo area matches tile height */
 body.sidebar-collapsed .logo {
+  height: 40px;
   justify-content: center;
   padding: 0;
   gap: 0;
@@ -400,10 +406,11 @@ body.sidebar-collapsed .sidebar-foot {
 
 /* Smooth transitions */
 .sidebar {
+  overflow: hidden;
   transition: width 0.25s var(--spring);
 }
 .content {
-  transition: margin-left 0.25s var(--spring);
+  transition: margin-left 0.25s var(--spring), width 0.25s var(--spring);
 }
 .logo-text, .sidebar-date, .nav-label {
   transition: opacity 0.2s ease, width 0.25s ease;
@@ -2097,6 +2104,9 @@ html, body {
   min-width: 0;
   box-sizing: border-box;
   width: calc(100% - var(--sidebar-w));
+}
+body.sidebar-collapsed .content {
+  width: calc(100% - 64px);
 }
 
 .tab,
