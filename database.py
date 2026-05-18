@@ -90,7 +90,10 @@ def init_db():
             ("user_id",           "INTEGER"),
         ],
         "habits":    [("user_id", "INTEGER")],
-        "habit_completions": [("duration_minutes", "INTEGER NOT NULL DEFAULT 0")],
+        "habit_completions": [
+            ("duration_minutes", "INTEGER NOT NULL DEFAULT 0"),
+            ("check_count",      "INTEGER NOT NULL DEFAULT 1"),
+        ],
         "goals":     [("user_id", "INTEGER")],
         "time_logs": [("user_id", "INTEGER")],
     }

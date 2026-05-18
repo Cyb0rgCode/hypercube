@@ -282,10 +282,11 @@ def get_habits(uid):
     for h in habits:
         h = dict(h)
         comp = conn.execute(
-            "SELECT duration_minutes FROM habit_completions WHERE habit_id = ? AND completion_date = ?",
+            "SELECT duration_minutes, check_count FROM habit_completions WHERE habit_id = ? AND completion_date = ?",
             (h["id"], today),
         ).fetchone()
-        h["done_today"] = bool(comp)
+        h["done_today"]        = bool(comp) and comp["check_count"] > 0
+        h["check_count_today"] = comp["check_count"]      if comp else 0
         h["time_logged_today"] = comp["duration_minutes"] if comp else 0
         h["streak"] = _calc_streak(conn, h["id"])
         result.append(h)
@@ -328,6 +329,7 @@ def create_habit(uid):
 @app.route("/api/habits/<int:habit_id>/toggle", methods=["POST"])
 @require_user
 def toggle_habit(uid, habit_id):
+    """Increment the check count for today (each tap = +1 check)."""
     today = str(date.today())
     conn = get_db()
     owner = conn.execute(
@@ -337,25 +339,59 @@ def toggle_habit(uid, habit_id):
         conn.close()
         return jsonify({"error": "habit not found"}), 404
     existing = conn.execute(
-        "SELECT id FROM habit_completions WHERE habit_id = ? AND completion_date = ?",
+        "SELECT id, check_count FROM habit_completions WHERE habit_id = ? AND completion_date = ?",
         (habit_id, today),
     ).fetchone()
     if existing:
         conn.execute(
-            "DELETE FROM habit_completions WHERE habit_id = ? AND completion_date = ?",
-            (habit_id, today),
+            "UPDATE habit_completions SET check_count = check_count + 1 WHERE id = ?",
+            (existing["id"],),
         )
-        done = False
+        check_count = existing["check_count"] + 1
     else:
         conn.execute(
-            "INSERT INTO habit_completions (habit_id, completion_date) VALUES (?, ?)",
+            "INSERT INTO habit_completions (habit_id, completion_date, check_count) VALUES (?, ?, 1)",
             (habit_id, today),
         )
-        done = True
+        check_count = 1
     conn.commit()
     streak = _calc_streak(conn, habit_id)
     conn.close()
-    return jsonify({"done_today": done, "streak": streak})
+    return jsonify({"done_today": True, "check_count": check_count, "streak": streak})
+
+
+@app.route("/api/habits/<int:habit_id>/uncheck", methods=["POST"])
+@require_user
+def uncheck_habit(uid, habit_id):
+    """Decrement the check count; delete the completion row when it hits 0."""
+    today = str(date.today())
+    conn = get_db()
+    owner = conn.execute(
+        "SELECT 1 FROM habits WHERE id = ? AND user_id = ?", (habit_id, uid)
+    ).fetchone()
+    if not owner:
+        conn.close()
+        return jsonify({"error": "habit not found"}), 404
+    existing = conn.execute(
+        "SELECT id, check_count FROM habit_completions WHERE habit_id = ? AND completion_date = ?",
+        (habit_id, today),
+    ).fetchone()
+    if not existing or existing["check_count"] <= 0:
+        conn.close()
+        return jsonify({"done_today": False, "check_count": 0})
+    if existing["check_count"] == 1:
+        conn.execute("DELETE FROM habit_completions WHERE id = ?", (existing["id"],))
+        check_count = 0
+    else:
+        conn.execute(
+            "UPDATE habit_completions SET check_count = check_count - 1 WHERE id = ?",
+            (existing["id"],),
+        )
+        check_count = existing["check_count"] - 1
+    conn.commit()
+    streak = _calc_streak(conn, habit_id)
+    conn.close()
+    return jsonify({"done_today": check_count > 0, "check_count": check_count, "streak": streak})
 
 
 @app.route("/api/habits/<int:habit_id>/log", methods=["POST"])
@@ -497,14 +533,24 @@ def analytics(uid):
     today = date.today()
     since = str(today - timedelta(days=6))
 
-    # Daily time totals from this user's task logs over last 7 days
+    # Daily time: task logs + habit time combined
     daily_time = conn.execute(
-        """SELECT tl.logged_at AS date, SUM(tl.duration_minutes) AS total
-             FROM task_logs tl
-             JOIN tasks t ON tl.task_id = t.id
-            WHERE tl.logged_at >= ? AND t.user_id = ?
-         GROUP BY tl.logged_at ORDER BY tl.logged_at ASC""",
-        (since, uid),
+        """SELECT date, SUM(total) AS total FROM (
+               SELECT tl.logged_at AS date, SUM(tl.duration_minutes) AS total
+                 FROM task_logs tl
+                 JOIN tasks t ON tl.task_id = t.id
+                WHERE tl.logged_at >= ? AND t.user_id = ?
+               GROUP BY tl.logged_at
+               UNION ALL
+               SELECT hc.completion_date AS date, SUM(hc.duration_minutes) AS total
+                 FROM habit_completions hc
+                 JOIN habits h ON hc.habit_id = h.id
+                WHERE hc.completion_date >= ? AND h.user_id = ?
+                  AND hc.duration_minutes > 0
+               GROUP BY hc.completion_date
+           )
+         GROUP BY date ORDER BY date ASC""",
+        (since, uid, since, uid),
     ).fetchall()
     daily_map = {r["date"]: r["total"] for r in daily_time}
     daily_filled = [
@@ -513,14 +559,24 @@ def analytics(uid):
         for i in range(7)
     ]
 
-    time_by_category = conn.execute(
+    # Time by priority (tasks) + habits as their own slice
+    time_by_category = list(conn.execute(
         """SELECT t.priority AS category, SUM(tl.duration_minutes) AS total
              FROM task_logs tl
              JOIN tasks t ON tl.task_id = t.id
             WHERE tl.logged_at >= ? AND t.user_id = ?
          GROUP BY t.priority ORDER BY total DESC""",
         (since, uid),
-    ).fetchall()
+    ).fetchall())
+    habit_mins = conn.execute(
+        """SELECT COALESCE(SUM(hc.duration_minutes), 0) AS total
+             FROM habit_completions hc
+             JOIN habits h ON hc.habit_id = h.id
+            WHERE hc.completion_date >= ? AND h.user_id = ?""",
+        (since, uid),
+    ).fetchone()["total"]
+    if habit_mins > 0:
+        time_by_category = list(time_by_category) + [{"category": "habit", "total": habit_mins}]
 
     task_stats = conn.execute(
         """SELECT

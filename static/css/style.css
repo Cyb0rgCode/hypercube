@@ -1106,6 +1106,20 @@ h2 {
   font-family: 'JetBrains Mono', monospace;
 }
 
+/* Count badge: how many times checked today */
+.habit-count-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--green);
+  background: rgba(var(--green-rgb), 0.12);
+  border: 1px solid rgba(var(--green-rgb), 0.25);
+  border-radius: 20px;
+  padding: 1px 7px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 /* Habit row right-side cluster: time chip + log btn + streak + delete */
 .habit-row-right {
   display: flex;
