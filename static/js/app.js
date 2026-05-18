@@ -6,7 +6,26 @@
   if (saved === "dark") document.documentElement.setAttribute("data-theme", "dark");
 })();
 
+// Restore sidebar collapsed state before first paint
+(function () {
+  if (localStorage.getItem("sidebar-collapsed") === "1")
+    document.body.classList.add("sidebar-collapsed");
+})();
+
 document.addEventListener("DOMContentLoaded", () => {
+  // Sidebar collapse toggle
+  const collapseBtn = document.querySelector("#sidebar-collapse-btn");
+  if (collapseBtn) {
+    collapseBtn.addEventListener("click", () => {
+      const collapsed = document.body.classList.toggle("sidebar-collapsed");
+      localStorage.setItem("sidebar-collapsed", collapsed ? "1" : "0");
+      collapseBtn.setAttribute("aria-label", collapsed ? "Expand sidebar" : "Collapse sidebar");
+      collapseBtn.title = collapsed ? "Expand sidebar" : "Collapse sidebar";
+      // Redraw nav indicator after width change settles
+      setTimeout(() => updateNavIndicator(false), 260);
+    });
+  }
+
   const toggle = document.querySelector("#theme-toggle");
 
   function applyTheme(theme) {
