@@ -1710,6 +1710,27 @@ function renderMatrixQuadrant(listId, tasks) {
 
 let matrixPauseHoldTimer = null;
 
+// Double-tap on logged-time chip → reset all logs for that task
+let _mtLastLogTap = { id: null, t: 0 };
+$("#tab-matrix").addEventListener("click", async e => {
+  const chip = e.target.closest(".matrix-time-logged");
+  if (!chip) return;
+  e.stopPropagation();
+  const li = chip.closest("li[data-id]");
+  if (!li) return;
+  const id = Number(li.dataset.id);
+  const now = Date.now();
+  if (_mtLastLogTap.id === id && now - _mtLastLogTap.t < 400) {
+    _mtLastLogTap = { id: null, t: 0 };
+    chip.style.opacity = "0.3";
+    await api(`/api/tasks/${id}/log`, "DELETE", null);
+    toast("Time log cleared");
+    loadMatrix();
+  } else {
+    _mtLastLogTap = { id, t: now };
+  }
+});
+
 // Checkbox: 1st click = start timer, 2nd click = stop + log + sacrifice
 // Double-click = instant sacrifice (no timer)
 // Completed task checkbox = reopen immediately
