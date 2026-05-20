@@ -1102,25 +1102,36 @@ h2 {
 }
 .matrix-task.timing .matrix-timer { opacity: 1; }
 
-/* ── Timing state: grayed-out with subtle pulse ── */
+/* ── Timing state: accent violet ── */
 .matrix-task.timing {
-  opacity: 0.55;
-  border-color: var(--border);
-  background: var(--surface2);
-  animation: matrixPulse 2.5s ease-in-out infinite;
+  border-color: rgba(var(--accent-rgb), 0.6);
+  background: rgba(var(--accent-rgb), 0.08);
+  box-shadow: 0 0 0 1px rgba(var(--accent-rgb), 0.2), 0 4px 18px rgba(var(--accent-rgb), 0.14);
+  animation: matrixPulse 2s ease-in-out infinite;
 }
-.matrix-task.timing .matrix-task-title { color: var(--muted); }
-.matrix-task.timing .matrix-timer      { color: var(--muted); }
+.matrix-task.timing .matrix-task-title { color: var(--accent); }
+.matrix-task.timing .matrix-timer      { color: var(--accent); }
+.matrix-task.timing .matrix-check {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
 @keyframes matrixPulse {
-  0%, 100% { opacity: 0.55; }
-  50%       { opacity: 0.75; }
+  0%, 100% { box-shadow: 0 0 0 1px rgba(var(--accent-rgb), 0.2),  0 4px 14px rgba(var(--accent-rgb), 0.12); }
+  50%       { box-shadow: 0 0 0 1px rgba(var(--accent-rgb), 0.45), 0 6px 22px rgba(var(--accent-rgb), 0.26); }
 }
-/* Paused: slightly more visible, amber timer */
+/* Paused: amber */
 .matrix-task.timing.paused {
-  opacity: 0.65;
+  border-color: rgba(247,199,106, 0.6);
+  background: rgba(247,199,106, 0.08);
+  box-shadow: 0 0 0 1px rgba(247,199,106, 0.2), 0 4px 14px rgba(247,199,106, 0.12);
   animation: none;
 }
-.matrix-task.timing.paused .matrix-timer { color: var(--yellow, #f7c76a); }
+.matrix-task.timing.paused .matrix-task-title { color: var(--yellow, #f7c76a); }
+.matrix-task.timing.paused .matrix-timer      { color: var(--yellow, #f7c76a); }
+.matrix-task.timing.paused .matrix-check {
+  border-color: var(--yellow, #f7c76a);
+  box-shadow: 0 0 0 3px rgba(247,199,106, 0.18);
+}
 
 /* ── Logged time chip ── */
 .matrix-time-logged {
