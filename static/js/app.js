@@ -1652,6 +1652,7 @@ function renderMatrixQuadrant(listId, tasks) {
               aria-label="${t.completed ? "Mark incomplete" : "Mark complete"}"></button>
       <span class="matrix-task-title">${escHtml(t.title)}</span>
       <span class="matrix-timer"></span>
+      ${t.time_logged > 0 ? `<span class="matrix-time-logged">⏱ ${fmtTime(t.time_logged)}</span>` : ""}
       ${t.deadline ? `<span class="item-meta">${t.deadline}</span>` : ""}
     </li>
   `).join("");
