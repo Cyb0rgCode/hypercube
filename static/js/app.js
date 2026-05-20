@@ -1725,15 +1725,14 @@ $("#tab-matrix").addEventListener("click", async e => {
   }, 220);
 });
 
-// Desktop hold on checkbox: pause/resume when timer is running
+// Desktop hold on task row: pause/resume when timer is running on that task
 $("#tab-matrix").addEventListener("mousedown", e => {
   if (e.button !== 0) return;
-  const checkBtn = e.target.closest(".matrix-check");
-  if (!checkBtn) return;
-  const li = checkBtn.closest("li[data-id]");
+  if (e.target.closest(".matrix-check")) return; // checkbox handles its own clicks
+  const li = e.target.closest(".matrix-task[data-id]");
   if (!li) return;
   const id = Number(li.dataset.id);
-  if (matrixTimerTaskId !== id) return; // no timer on this task, normal click
+  if (matrixTimerTaskId !== id) return; // no timer on this task → drag handles it
   matrixPauseHoldTimer = setTimeout(() => {
     matrixPauseHoldTimer = null;
     matrixTimerPaused ? resumeMatrixTimer() : pauseMatrixTimer();
@@ -1751,7 +1750,9 @@ let matrixDragSourceId = null;
 $("#tab-matrix").addEventListener("dragstart", e => {
   const li = e.target.closest(".matrix-task[data-id]");
   if (!li) { e.preventDefault(); return; }
-  matrixDragId       = Number(li.dataset.id);
+  const id = Number(li.dataset.id);
+  if (matrixTimerTaskId === id) { e.preventDefault(); return; } // timed task: no drag
+  matrixDragId       = id;
   matrixDragSourceId = li.closest(".matrix-task-list")?.id ?? null;
   e.dataTransfer.effectAllowed = "move";
   requestAnimationFrame(() => li.classList.add("dragging"));
@@ -1880,8 +1881,9 @@ function cancelLongPress() {
     if (!li || e.target.closest(".matrix-check")) return;
     const id = Number(li.dataset.id);
 
-    // ── Checkbox on timed task: long press = pause/resume, NOT drag ──
-    if (id === matrixTimerTaskId && e.target.closest(".matrix-check")) {
+    // ── Timed task: long press on row = pause/resume, drag is blocked ──
+    if (id === matrixTimerTaskId) {
+      if (e.target.closest(".matrix-check")) return; // let checkbox handle its own tap
       li.classList.add("press-hold");
       longPressTimer = setTimeout(() => {
         longPressTimer = null;
