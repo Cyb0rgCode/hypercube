@@ -1665,12 +1665,9 @@ let matrixPauseHoldTimer = null;
 // Checkbox: 1st click = start timer, 2nd click = stop + log + sacrifice
 // Double-click = instant sacrifice (no timer)
 // Completed task checkbox = reopen immediately
-let matrixCheckClickTimer = null;
-
 $("#tab-matrix").addEventListener("dblclick", async e => {
   const checkBtn = e.target.closest(".matrix-check");
   if (!checkBtn) return;
-  clearTimeout(matrixCheckClickTimer); matrixCheckClickTimer = null;
   const li = checkBtn.closest("li[data-id]");
   if (!li) return;
   const id   = Number(li.dataset.id);
@@ -1706,7 +1703,7 @@ $("#tab-matrix").addEventListener("click", async e => {
     const elapsed = matrixTimerElapsedSec();
     cancelMatrixTimer();
     await api(`/api/tasks/${id}`, "PUT", { completed: true });
-    if (elapsed >= 30) {
+    if (elapsed > 0) {
       const mins = Math.max(1, Math.round(elapsed / 60));
       await api(`/api/tasks/${id}/log`, "POST", { minutes: mins });
       toast(`Task sacrificed ✓ — ${mins}m logged`);
@@ -1717,13 +1714,9 @@ $("#tab-matrix").addEventListener("click", async e => {
     return;
   }
 
-  // No timer yet → start timer (small delay so dblclick can cancel it)
-  clearTimeout(matrixCheckClickTimer);
-  matrixCheckClickTimer = setTimeout(() => {
-    matrixCheckClickTimer = null;
-    if (matrixTimerTaskId !== null) cancelMatrixTimer();
-    startMatrixTimer(id);
-  }, 220);
+  // No timer yet → start immediately
+  if (matrixTimerTaskId !== null) cancelMatrixTimer();
+  startMatrixTimer(id);
 });
 
 // Desktop hold on task row: pause/resume when timer is running on that task
