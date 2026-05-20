@@ -1784,8 +1784,8 @@ $("#tab-matrix").addEventListener("click", async e => {
     const elapsed = matrixTimerElapsedSec();
     cancelMatrixTimer();
     await api(`/api/tasks/${id}`, "PUT", { completed: true });
-    if (elapsed > 0) {
-      const mins = Math.max(1, Math.round(elapsed / 60));
+    if (elapsed >= 60) {
+      const mins = Math.round(elapsed / 60);
       await api(`/api/tasks/${id}/log`, "POST", { minutes: mins });
       toast(`Task sacrificed ✓ — ${mins}m logged`);
     } else {
