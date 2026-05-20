@@ -1094,7 +1094,7 @@ h2 {
   font-family: 'JetBrains Mono', monospace;
   font-size: 11px;
   font-weight: 600;
-  color: var(--accent);
+  color: var(--cyan);
   letter-spacing: 0.02em;
   white-space: nowrap;
   opacity: 0;
@@ -1102,22 +1102,22 @@ h2 {
 }
 .matrix-task.timing .matrix-timer { opacity: 1; }
 
-/* ── Timing state: accent violet ── */
+/* ── Timing state: cyan ── */
 .matrix-task.timing {
-  border-color: rgba(var(--accent-rgb), 0.6);
-  background: rgba(var(--accent-rgb), 0.08);
-  box-shadow: 0 0 0 1px rgba(var(--accent-rgb), 0.2), 0 4px 18px rgba(var(--accent-rgb), 0.14);
+  border-color: rgba(var(--cyan-rgb), 0.6);
+  background: rgba(var(--cyan-rgb), 0.08);
+  box-shadow: 0 0 0 1px rgba(var(--cyan-rgb), 0.2), 0 4px 18px rgba(var(--cyan-rgb), 0.14);
   animation: matrixPulse 2s ease-in-out infinite;
 }
-.matrix-task.timing .matrix-task-title { color: var(--accent); }
-.matrix-task.timing .matrix-timer      { color: var(--accent); }
+.matrix-task.timing .matrix-task-title { color: var(--cyan); }
+.matrix-task.timing .matrix-timer      { color: var(--cyan); }
 .matrix-task.timing .matrix-check {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-dim);
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 3px var(--cyan-dim);
 }
 @keyframes matrixPulse {
-  0%, 100% { box-shadow: 0 0 0 1px rgba(var(--accent-rgb), 0.2),  0 4px 14px rgba(var(--accent-rgb), 0.12); }
-  50%       { box-shadow: 0 0 0 1px rgba(var(--accent-rgb), 0.45), 0 6px 22px rgba(var(--accent-rgb), 0.26); }
+  0%, 100% { box-shadow: 0 0 0 1px rgba(var(--cyan-rgb), 0.2),  0 4px 14px rgba(var(--cyan-rgb), 0.12); }
+  50%       { box-shadow: 0 0 0 1px rgba(var(--cyan-rgb), 0.45), 0 6px 22px rgba(var(--cyan-rgb), 0.26); }
 }
 /* Paused: amber */
 .matrix-task.timing.paused {
