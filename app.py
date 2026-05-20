@@ -225,6 +225,24 @@ def log_task_time(uid, task_id):
     return jsonify(task)
 
 
+@app.route("/api/tasks/<int:task_id>/log", methods=["DELETE"])
+@require_user
+def reset_task_log(uid, task_id):
+    conn = get_db()
+    task_row = conn.execute(
+        "SELECT * FROM tasks WHERE id = ? AND user_id = ?", (task_id, uid)
+    ).fetchone()
+    if not task_row:
+        conn.close()
+        return jsonify({"error": "task not found"}), 404
+    conn.execute("DELETE FROM task_logs WHERE task_id = ?", (task_id,))
+    conn.commit()
+    task = dict(task_row)
+    task["time_logged"] = 0
+    conn.close()
+    return jsonify(task)
+
+
 # ── Server-side matrix timer ──────────────────────────────────────────────────
 
 def _timer_elapsed(row):
