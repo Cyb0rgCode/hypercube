@@ -688,7 +688,34 @@ $("#task-form").addEventListener("submit", async e => {
   resetToggle("task-important");
 });
 
+// ── Double-tap any ⏱ logged-time badge to reset it ────────────────────────────
+// Shared by both the Tasks pane (.time-badge) and the Matrix (.matrix-time-logged).
+const _logTapState = { id: null, t: 0 };
+async function _handleLogBadgeTap(e, chipSelector) {
+  const chip = e.target.closest(chipSelector);
+  if (!chip) return false;
+  e.stopPropagation();
+  const li = chip.closest("li[data-id]");
+  if (!li) return true;
+  const id  = Number(li.dataset.id);
+  const now = Date.now();
+  if (_logTapState.id === id && now - _logTapState.t < 400) {
+    _logTapState.id = null;
+    chip.style.opacity = "0.3";
+    await api(`/api/tasks/${id}/log`, "DELETE", null);
+    toast("Time log cleared");
+    return "reset";
+  }
+  _logTapState.id = id;
+  _logTapState.t  = now;
+  return true;
+}
+
 $("#task-list").addEventListener("click", async e => {
+  const result = await _handleLogBadgeTap(e, ".time-badge");
+  if (result === "reset") { await loadTasks(); return; }
+  if (result !== false) return; // chip tapped once — arm state, skip normal handling
+
   const action = e.target.dataset.action || e.target.closest("[data-action]")?.dataset.action;
 
   if (action === "select-category") {
@@ -1711,24 +1738,9 @@ function renderMatrixQuadrant(listId, tasks) {
 let matrixPauseHoldTimer = null;
 
 // Double-tap on logged-time chip → reset all logs for that task
-let _mtLastLogTap = { id: null, t: 0 };
 $("#tab-matrix").addEventListener("click", async e => {
-  const chip = e.target.closest(".matrix-time-logged");
-  if (!chip) return;
-  e.stopPropagation();
-  const li = chip.closest("li[data-id]");
-  if (!li) return;
-  const id = Number(li.dataset.id);
-  const now = Date.now();
-  if (_mtLastLogTap.id === id && now - _mtLastLogTap.t < 400) {
-    _mtLastLogTap = { id: null, t: 0 };
-    chip.style.opacity = "0.3";
-    await api(`/api/tasks/${id}/log`, "DELETE", null);
-    toast("Time log cleared");
-    loadMatrix();
-  } else {
-    _mtLastLogTap = { id, t: now };
-  }
+  const result = await _handleLogBadgeTap(e, ".matrix-time-logged");
+  if (result === "reset") loadMatrix();
 });
 
 // Checkbox: 1st click = start timer, 2nd click = stop + log + sacrifice
