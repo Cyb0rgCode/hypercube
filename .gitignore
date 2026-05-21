@@ -1,5 +1,11 @@
-__pycache__/
-*.pyc
-productivity.db
-*.db
-.secret_key
+# Runtime files
+app.log
+cloudflared.log
+*.pid
+
+# Persistent scripts
+persist_start.sh
+persist_stop.sh
+
+# Backups
+backups/
