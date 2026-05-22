@@ -83,14 +83,9 @@ def init_db():
             accumulated_sec INTEGER NOT NULL DEFAULT 0,
             paused          INTEGER NOT NULL DEFAULT 0
         );
-
-        CREATE TABLE IF NOT EXISTS agent_config (
-            user_id    INTEGER PRIMARY KEY,
-            hermes_url TEXT,
-            hermes_key TEXT
-        );
     """)
     conn.commit()
+
 
     # Per-table column migrations — safe to run on existing DBs.
     column_migrations = {
