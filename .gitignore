@@ -9,3 +9,11 @@ persist_stop.sh
 
 # Backups
 backups/
+
+# Secrets and local data
+.secret_key
+productivity.db
+
+# Python cache
+__pycache__/
+*.pyc
