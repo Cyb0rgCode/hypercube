@@ -2340,6 +2340,21 @@ body.auth-visible #toast-container { visibility: hidden; }
   /* Log-mins: hide on touch */
   .log-mins-inline { display: none !important; }
 
+  /* Agent pane: extra compact on mobile */
+  #tab-agent .page-header { margin-bottom: 10px; }
+  #tab-agent .page-title { font-size: 20px; }
+  .agent-config-row { gap: 8px; flex-wrap: wrap; }
+  .agent-config-field { flex: 1 1 100%; }
+  .agent-config-field--key { flex: 1 1 100%; }
+  .agent-cfg-input { padding: 8px 10px; font-size: 13px; }
+  #agent-cfg-save { padding: 8px 12px; min-height: 36px; }
+  .agent-chat-wrap { height: calc(100vh - 180px); min-height: 320px; }
+  .agent-messages { padding: 10px; gap: 6px; }
+  .agent-msg { max-width: 92%; font-size: 13px; padding: 7px 9px; }
+  .agent-input-row { padding: 6px 10px; gap: 6px; }
+  .agent-input { font-size: 13px; padding: 6px 9px; max-height: 84px; }
+  .agent-send-btn { width: 32px; height: 32px; }
+
   /* btn-icon: enforce 36x36 minimum touch target */
   .btn-icon { min-width: 36px; min-height: 36px; display: inline-flex; align-items: center; justify-content: center; }
 
