@@ -2166,7 +2166,7 @@ async function sendAgentMessage() {
   // Thinking indicator
   const thinking = document.createElement("div");
   thinking.className = "agent-msg thinking";
-  thinking.textContent = "Thinking";
+  thinking.textContent = "…";
   $("#agent-messages").appendChild(thinking);
   $("#agent-messages").scrollTop = $("#agent-messages").scrollHeight;
 

@@ -9,10 +9,17 @@ persist_stop.sh
 
 # Backups
 backups/
+*.backup_*
 
 # Secrets and local data
 .secret_key
 productivity.db
+
+# Hermes / Graphify artifacts
+.hermes/
+.venv-graphify/
+AGENTS.md
+graphify/
 
 # Python cache
 __pycache__/
