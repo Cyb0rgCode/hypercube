@@ -2189,10 +2189,63 @@ async function sendAgentMessage() {
   input.focus();
 }
 
+async function sendAgentAttachment(file, kind = "file") {
+  if (!file) return;
+  const btn = $("#agent-send");
+  btn.disabled = true;
+
+  const label = kind === "image" ? "[Image]" : "[File]";
+  appendAgentMsg("user", `${label} ${file.name}`);
+
+  const thinking = document.createElement("div");
+  thinking.className = "agent-msg thinking";
+  thinking.textContent = "…";
+  $("#agent-messages").appendChild(thinking);
+  $("#agent-messages").scrollTop = $("#agent-messages").scrollHeight;
+
+  try {
+    const form = new FormData();
+    form.append("file", file);
+    form.append("kind", kind);
+    const res = await fetch("/api/agent/upload", { method: "POST", body: form });
+    if (!res.ok) throw new Error("upload_failed");
+    const data = await res.json();
+
+    agentHistory.push({
+      role: "user",
+      content: [
+        { type: "text", text: file.name },
+        { type: kind === "image" ? "image_url" : "file_url", url: data.url, name: file.name }
+      ]
+    });
+
+    const chat = await api("/api/agent/chat", "POST", {
+      model: "hermes",
+      messages: agentHistory,
+      stream: false,
+    });
+
+    thinking.remove();
+    const reply = chat?.choices?.[0]?.message?.content ?? "No response.";
+    agentHistory.push({ role: "assistant", content: reply });
+    appendAgentMsg("agent", reply);
+  } catch (err) {
+    thinking.remove();
+    appendAgentMsg("agent", "Couldn't upload file. Try again.");
+  }
+
+  btn.disabled = false;
+}
+
 // Wire up send button + Enter (Shift+Enter for newline)
 document.addEventListener("DOMContentLoaded", () => {
   const btn   = $("#agent-send");
   const input = $("#agent-input");
+  const imgBtn = $("#agent-attach-image");
+  const fileBtn = $("#agent-attach-file");
+  const imgInput = $("#agent-image-input");
+  const fileInput = $("#agent-file-input");
+
   if (btn)   btn.addEventListener("click", sendAgentMessage);
   if (input) {
     input.addEventListener("keydown", e => {
@@ -2202,6 +2255,23 @@ document.addEventListener("DOMContentLoaded", () => {
     input.addEventListener("input", () => {
       input.style.height = "auto";
       input.style.height = Math.min(input.scrollHeight, 120) + "px";
+    });
+  }
+
+  if (imgBtn && imgInput) {
+    imgBtn.addEventListener("click", () => imgInput.click());
+    imgInput.addEventListener("change", () => {
+      const file = imgInput.files && imgInput.files[0];
+      imgInput.value = "";
+      sendAgentAttachment(file, "image");
+    });
+  }
+  if (fileBtn && fileInput) {
+    fileBtn.addEventListener("click", () => fileInput.click());
+    fileInput.addEventListener("change", () => {
+      const file = fileInput.files && fileInput.files[0];
+      fileInput.value = "";
+      sendAgentAttachment(file, "file");
     });
   }
 });

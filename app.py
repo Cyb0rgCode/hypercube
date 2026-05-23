@@ -186,6 +186,24 @@ def auth_users():
 
 # ── Hermes Agent chat proxy ───────────────────────────────────────────────────
 
+@app.route("/api/agent/upload", methods=["POST"])
+@require_user
+def agent_upload(uid):
+    """Accept an upload and return a data URL to send to Hermes."""
+    import base64, mimetypes
+    file = request.files.get("file")
+    if not file:
+        return jsonify({"error": "missing file"}), 400
+    kind = (request.form.get("kind") or "file").strip().lower()
+    raw = file.read()
+    if len(raw) > 8 * 1024 * 1024:
+        return jsonify({"error": "file too large"}), 413
+    mime = file.mimetype or mimetypes.guess_type(file.filename or "")[0] or "application/octet-stream"
+    b64 = base64.b64encode(raw).decode()
+    data_url = f"data:{mime};base64,{b64}"
+    return jsonify({"url": data_url, "name": file.filename or "attachment", "kind": kind})
+
+
 @app.route("/api/agent/chat", methods=["POST"])
 @require_user
 def agent_chat(uid):

@@ -1336,6 +1336,18 @@ h2 {
     font-size: 16px !important;
   }
 
+  #tab-agent .agent-input-row {
+    position: sticky;
+    bottom: calc(66px + env(safe-area-inset-bottom));
+    z-index: 6;
+    border-radius: 12px;
+    margin: 8px 0 12px;
+    box-shadow: 0 12px 24px rgba(20,20,40,0.12);
+  }
+  #tab-agent .agent-messages {
+    padding-bottom: 88px;
+  }
+
   body {
     font-size: 15px;
     min-height: 100vh;
@@ -2028,6 +2040,22 @@ body.drag-selecting * { cursor: crosshair !important; }
   background: var(--bg-1);
 }
 
+.agent-attach-btn {
+  flex-shrink: 0;
+  width: 34px; height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s, transform 0.3s var(--spring);
+}
+.agent-attach-btn:hover { background: var(--bg-3, var(--bg-2)); }
+.agent-attach-btn:active { transform: scale(0.92); transition-duration: 0.08s; }
+
 .agent-input {
   flex: 1;
   background: var(--bg-2);
@@ -2343,11 +2371,12 @@ body.auth-visible #toast-container { visibility: hidden; }
   /* Agent pane: extra compact on mobile */
   #tab-agent .page-header { margin-bottom: 10px; }
   #tab-agent .page-title { font-size: 20px; }
-  .agent-chat-wrap { height: calc(100vh - 180px); min-height: 320px; }
+  .agent-chat-wrap { height: calc(100vh - 230px); min-height: 300px; }
   .agent-messages { padding: 10px; gap: 6px; }
   .agent-msg { max-width: 92%; font-size: 13px; padding: 7px 9px; }
   .agent-input-row { padding: 6px 10px; gap: 6px; }
   .agent-input { font-size: 13px; padding: 6px 9px; max-height: 84px; }
+  .agent-attach-btn { width: 32px; height: 32px; }
   .agent-send-btn { width: 32px; height: 32px; }
 
   /* btn-icon: enforce 36x36 minimum touch target */
