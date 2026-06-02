@@ -2650,6 +2650,67 @@ body.drag-selecting * { cursor: crosshair !important; }
 /* Archived-date chip inside archive view */
 .archive-date { font-style: italic; opacity: 0.7; }
 
+/* ── Tesseract boot loader (theme-aware) ── */
+.app-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 10060; /* above auth overlay (9999) and toasts (10002) */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  background:
+    radial-gradient(ellipse 52% 46% at 50% 42%, rgba(var(--accent-rgb), 0.12), transparent 70%),
+    var(--bg);
+  opacity: 1;
+  transition: opacity 0.5s ease;
+}
+.app-loader--out { opacity: 0; pointer-events: none; }
+
+.app-loader-cube {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.app-loader-halo {
+  position: absolute;
+  width: 160%;
+  height: 160%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(var(--accent-rgb), 0.20), transparent 65%);
+  filter: blur(8px);
+  animation: loaderBreathe 3.6s ease-in-out infinite;
+}
+@keyframes loaderBreathe {
+  0%, 100% { transform: scale(0.9);  opacity: 0.6; }
+  50%      { transform: scale(1.05); opacity: 1;   }
+}
+#tesseract-canvas {
+  display: block;
+  width: min(52vw, 200px);
+  height: min(52vw, 200px);
+  position: relative;
+  z-index: 2;
+}
+.app-loader-text {
+  position: relative;
+  z-index: 2;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.5em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding-left: 0.5em; /* offset letter-spacing for optical centering */
+  animation: loaderFlicker 4s ease-in-out infinite;
+}
+@keyframes loaderFlicker {
+  0%, 100% { opacity: 0.85; }
+  45%      { opacity: 0.5;  }
+}
+
 /* ── Auth backup section ── */
 .auth-backup { margin-top: 14px; }
 

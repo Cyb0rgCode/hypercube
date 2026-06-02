@@ -12,6 +12,133 @@
     document.body.classList.add("sidebar-collapsed");
 })();
 
+// ── Tesseract boot loader (theme-aware 4-cube) ─────────────────────────────────
+// Colours are read from the active theme's --accent-rgb / --cyan-rgb so the
+// loader matches dark and light mode. Shown during initial load and login.
+const AppLoader = (function () {
+  const root   = document.getElementById("app-loader");
+  if (!root) return { show() {}, hide() {} };
+  const canvas = document.getElementById("tesseract-canvas");
+  const ctx    = canvas.getContext("2d");
+  const txt    = document.getElementById("app-loader-text");
+  const MIN_MS = 650; // minimum on-screen time so the animation is actually seen
+
+  let W, H, DPR, raf = null, t = 0, shownAt = 0, dotTimer = null;
+  let hideT1 = null, hideT2 = null;
+
+  // 16 vertices of a 4-cube; edges connect verts differing in exactly one axis.
+  const verts = [];
+  for (let i = 0; i < 16; i++) verts.push([(i & 1) ? 1 : -1, (i & 2) ? 1 : -1, (i & 4) ? 1 : -1, (i & 8) ? 1 : -1]);
+  const edges = [];
+  for (let i = 0; i < 16; i++) for (let b = 0; b < 4; b++) { const j = i ^ (1 << b); if (i < j) edges.push([i, j]); }
+
+  let A = [124, 106, 247], C = [106, 247, 200], isDark = true;
+  function readTheme() {
+    const cs = getComputedStyle(document.documentElement);
+    const pa = (cs.getPropertyValue("--accent-rgb") || "").trim();
+    const pc = (cs.getPropertyValue("--cyan-rgb")   || "").trim();
+    if (pa) A = pa.split(",").map(n => parseInt(n, 10));
+    if (pc) C = pc.split(",").map(n => parseInt(n, 10));
+    isDark = document.documentElement.getAttribute("data-theme") === "dark";
+  }
+
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    const r = canvas.getBoundingClientRect();
+    W = r.width; H = r.height;
+    if (!W || !H) return false; // not laid out yet
+    canvas.width = W * DPR; canvas.height = H * DPR;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    return true;
+  }
+
+  function rot(p, a, b, ang) {
+    const c = Math.cos(ang), s = Math.sin(ang), va = p[a], vb = p[b];
+    p[a] = va * c - vb * s; p[b] = va * s + vb * c;
+  }
+  function project(p) {
+    const w4 = 1 / (3.2 - p[3]);
+    let x = p[0] * w4, y = p[1] * w4, z = p[2] * w4;
+    const w3 = 1 / (3.0 - z), scale = Math.min(W, H) * 1.05;
+    return { x: W / 2 + x * w3 * scale, y: H / 2 + y * w3 * scale, depth: w3, w: p[3] };
+  }
+
+  function frame() {
+    if (!W || !H) { if (!resize()) { raf = requestAnimationFrame(frame); return; } } // wait for layout
+    t += 0.0125;
+    ctx.clearRect(0, 0, W, H);
+    const proj = verts.map(v => {
+      const p = v.slice();
+      rot(p, 0, 3, t * 0.85); rot(p, 1, 3, t * 0.55); rot(p, 2, 3, t * 0.40);
+      rot(p, 0, 1, t * 0.30); rot(p, 1, 2, t * 0.22);
+      return project(p);
+    });
+
+    // Additive blend glows nicely on dark; on light use normal compositing.
+    ctx.globalCompositeOperation = isDark ? "lighter" : "source-over";
+    for (const [i, j] of edges) {
+      const a = proj[i], b = proj[j];
+      const mw = (a.w + b.w) / 2, md = (a.depth + b.depth) / 2;
+      const mix = (mw + 1) / 2; // blend accent → cyan by 4D depth
+      const r  = Math.round(A[0] + (C[0] - A[0]) * mix);
+      const g  = Math.round(A[1] + (C[1] - A[1]) * mix);
+      const bl = Math.round(A[2] + (C[2] - A[2]) * mix);
+      const alpha = isDark ? Math.min(0.20 + md * 1.7, 0.95) : Math.min(0.42 + md * 1.6, 0.98);
+      ctx.strokeStyle = `rgba(${r},${g},${bl},${alpha})`;
+      ctx.lineWidth   = 0.4 + md * 4.4;
+      ctx.shadowColor = isDark ? `rgba(${A[0]},${A[1]},${A[2]},0.9)` : `rgba(${A[0]},${A[1]},${A[2]},0.28)`;
+      ctx.shadowBlur  = isDark ? 14 * md * 6 : 8 * md;
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    }
+    ctx.shadowBlur = 0;
+    const vtx = isDark ? C : A; // bright cyan dots on dark, accent dots on light
+    for (const p of proj) {
+      const r = 1.3 + p.depth * 9.5;
+      const a = isDark ? Math.min(0.30 + p.depth * 2.3, 0.97) : Math.min(0.45 + p.depth * 2.0, 0.98);
+      ctx.beginPath();
+      ctx.fillStyle = `rgba(${vtx[0]},${vtx[1]},${vtx[2]},${a})`;
+      ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalCompositeOperation = "source-over";
+    raf = requestAnimationFrame(frame);
+  }
+
+  function start() {
+    readTheme(); resize(); // always (re)size on show, even if already animating
+    if (raf) return;       // animation already running — sizing refreshed above
+    shownAt = performance.now();
+    let dots = 0;
+    clearInterval(dotTimer);
+    dotTimer = setInterval(() => { dots = (dots + 1) % 4; if (txt) txt.textContent = "loading" + ".".repeat(dots); }, 400);
+    raf = requestAnimationFrame(frame);
+  }
+  function stop() {
+    if (raf) { cancelAnimationFrame(raf); raf = null; }
+    clearInterval(dotTimer); dotTimer = null;
+  }
+
+  window.addEventListener("resize", () => { if (raf) resize(); });
+
+  return {
+    show() {
+      clearTimeout(hideT1); clearTimeout(hideT2); hideT1 = hideT2 = null;
+      root.hidden = false;
+      root.classList.remove("app-loader--out");
+      start();
+    },
+    hide() {
+      clearTimeout(hideT1); clearTimeout(hideT2);
+      const wait = Math.max(0, MIN_MS - (performance.now() - shownAt));
+      hideT1 = setTimeout(() => {
+        root.classList.add("app-loader--out");
+        hideT2 = setTimeout(() => { root.hidden = true; stop(); }, 520);
+      }, wait);
+    },
+  };
+})();
+// Start the loader immediately (script runs at end of <body>, so the node exists)
+AppLoader.show();
+
 document.addEventListener("DOMContentLoaded", () => {
   // Sidebar collapse toggle (clicking the logo title)
   const collapseBtn = document.querySelector("#sidebar-collapse-btn");
@@ -2670,6 +2797,7 @@ function showAuthOverlay() {
   overlay.hidden = false;
   document.body.classList.add("auth-visible");
   $("#sidebar-user").hidden = true;
+  AppLoader.hide(); // boot finished — no session, reveal login
   // Focus the input on next tick so animation runs first.
   setTimeout(() => { try { $("#auth-username").focus(); } catch (e) {} }, 60);
 }
@@ -2742,10 +2870,12 @@ async function authFetch(path, body) {
 }
 
 async function onLoggedIn(user) {
+  AppLoader.show(); // cover the dashboard's first data load (also covers post-login transition)
   setSidebarUser(user);
   hideAuthOverlay();
   // Boot the dashboard now that we have a session.
   try { await loadDashboard(); } catch (e) { /* api() already handled 401 */ }
+  AppLoader.hide();
 }
 
 async function handleAuthSubmit(e) {

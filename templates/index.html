@@ -10,6 +10,8 @@
   <meta name="theme-color" content="#f6f6fa" />
   <meta name="format-detection" content="telephone=no" />
   <title>Hypercube</title>
+  <!-- Apply saved theme before first paint so the loader & page never flash the wrong palette -->
+  <script>(function(){try{if((localStorage.getItem("theme")||"light")==="dark")document.documentElement.setAttribute("data-theme","dark");}catch(e){}})();</script>
   <link rel="apple-touch-icon" href="/static/img/icon.png" />
   <link rel="manifest" href="/static/manifest.json" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -19,6 +21,15 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
+  <!-- Tesseract boot loader — shown during initial load & login, hidden by app.js -->
+  <div id="app-loader" class="app-loader">
+    <div class="app-loader-cube">
+      <div class="app-loader-halo" aria-hidden="true"></div>
+      <canvas id="tesseract-canvas"></canvas>
+    </div>
+    <div class="app-loader-text" id="app-loader-text">loading</div>
+  </div>
+
   <aside class="sidebar">
     <div class="logo" id="sidebar-collapse-btn" role="button" tabindex="0" title="Collapse sidebar" aria-label="Collapse sidebar">
       <span class="logo-text"><span>Hypercube</span></span>
