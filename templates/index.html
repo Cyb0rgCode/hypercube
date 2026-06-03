@@ -12,8 +12,11 @@
   <title>Hypercube</title>
   <!-- Apply saved theme before first paint so the loader & page never flash the wrong palette -->
   <script>(function(){try{if((localStorage.getItem("theme")||"light")==="dark")document.documentElement.setAttribute("data-theme","dark");}catch(e){}})();</script>
-  <link rel="apple-touch-icon" href="/static/img/icon.png" />
+  <link rel="icon" id="favicon" type="image/png" href="/static/img/icon.png" />
+  <link rel="apple-touch-icon" id="apple-icon" href="/static/img/icon.png" />
   <link rel="manifest" href="/static/manifest.json" />
+  <!-- Swap favicon to inverted variant in light mode before first paint -->
+  <script>(function(){try{if((localStorage.getItem("theme")||"light")!=="dark"){var f=document.getElementById("favicon"),a=document.getElementById("apple-icon"),s="/static/img/icon-inverted.png";if(f)f.href=s;if(a)a.href=s;}}catch(e){}})();</script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
