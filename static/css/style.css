@@ -2689,8 +2689,8 @@ body.drag-selecting * { cursor: crosshair !important; }
 }
 #tesseract-canvas {
   display: block;
-  width: min(52vw, 200px);
-  height: min(52vw, 200px);
+  width: min(36vw, 140px);
+  height: min(36vw, 140px);
   position: relative;
   z-index: 2;
 }
