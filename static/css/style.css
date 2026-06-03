@@ -2650,26 +2650,59 @@ body.drag-selecting * { cursor: crosshair !important; }
 /* Archived-date chip inside archive view */
 .archive-date { font-style: italic; opacity: 0.7; }
 
-/* ── Tesseract boot loader (theme-aware) ── */
+/* ── Tesseract boot loader ── */
+/* Dark theme = original white-on-black. Light theme = colors inverted. */
+/* --lfg = foreground rgb, --lbg = background, --lvig = vignette corner rgb */
 .app-loader {
+  --lfg: 0, 0, 0;      /* light (default): black cube */
+  --lbg: #ffffff;      /* light: white background */
+  --lvig: 255, 255, 255;
   position: fixed;
   inset: 0;
   z-index: 10060; /* above auth overlay (9999) and toasts (10002) */
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 24px;
+  gap: 26px;
   background:
-    radial-gradient(ellipse 52% 46% at 50% 42%, rgba(var(--accent-rgb), 0.12), transparent 70%),
-    var(--bg);
+    radial-gradient(ellipse 50% 45% at 50% 42%, rgba(var(--lfg), 0.08), transparent 70%),
+    var(--lbg);
   opacity: 1;
   transition: opacity 0.5s ease;
 }
+[data-theme="dark"] .app-loader {
+  --lfg: 255, 255, 255; /* dark: white cube */
+  --lbg: #000000;       /* dark: black background */
+  --lvig: 0, 0, 0;
+}
 .app-loader--out { opacity: 0; pointer-events: none; }
+
+/* subtle grain */
+.app-loader::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background: repeating-linear-gradient(0deg,
+    rgba(var(--lfg), 0.025) 0, rgba(var(--lfg), 0.025) 1px, transparent 1px, transparent 3px);
+  opacity: 0.4;
+}
+/* vignette */
+.app-loader::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background: radial-gradient(circle at 50% 50%, transparent 50%, rgba(var(--lvig), 0.7) 100%);
+}
 
 .app-loader-cube {
   position: relative;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2679,7 +2712,7 @@ body.drag-selecting * { cursor: crosshair !important; }
   width: 160%;
   height: 160%;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(var(--accent-rgb), 0.20), transparent 65%);
+  background: radial-gradient(circle, rgba(var(--lfg), 0.12), transparent 65%);
   filter: blur(8px);
   animation: loaderBreathe 3.6s ease-in-out infinite;
 }
@@ -2698,17 +2731,17 @@ body.drag-selecting * { cursor: crosshair !important; }
   position: relative;
   z-index: 2;
   font-family: 'JetBrains Mono', monospace;
-  font-weight: 600;
-  font-size: 11px;
+  font-weight: 400;
+  font-size: 12px;
   letter-spacing: 0.5em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: rgba(var(--lfg), 0.85);
   padding-left: 0.5em; /* offset letter-spacing for optical centering */
   animation: loaderFlicker 4s ease-in-out infinite;
 }
 @keyframes loaderFlicker {
   0%, 100% { opacity: 0.85; }
-  45%      { opacity: 0.5;  }
+  45%      { opacity: 0.55; }
 }
 
 /* ── Auth backup section ── */
