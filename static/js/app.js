@@ -12,9 +12,9 @@
     document.body.classList.add("sidebar-collapsed");
 })();
 
-// ── Tesseract boot loader (4-cube) ─────────────────────────────────────────────
-// Dark theme = original white-on-black render. Light theme = grayscale inverted
-// (black cube on white). Shown during initial load and login.
+// ── Tesseract boot loader (theme-aware 4-cube) ─────────────────────────────────
+// Colours are read from the active theme's --accent-rgb / --cyan-rgb so the
+// loader matches dark and light mode. Shown during initial load and login.
 const AppLoader = (function () {
   const root   = document.getElementById("app-loader");
   if (!root) return { show() {}, hide() {} };
@@ -32,8 +32,13 @@ const AppLoader = (function () {
   const edges = [];
   for (let i = 0; i < 16; i++) for (let b = 0; b < 4; b++) { const j = i ^ (1 << b); if (i < j) edges.push([i, j]); }
 
-  let isDark = true;
+  let A = [124, 106, 247], C = [106, 247, 200], isDark = true;
   function readTheme() {
+    const cs = getComputedStyle(document.documentElement);
+    const pa = (cs.getPropertyValue("--accent-rgb") || "").trim();
+    const pc = (cs.getPropertyValue("--cyan-rgb")   || "").trim();
+    if (pa) A = pa.split(",").map(n => parseInt(n, 10));
+    if (pc) C = pc.split(",").map(n => parseInt(n, 10));
     isDark = document.documentElement.getAttribute("data-theme") === "dark";
   }
 
@@ -69,28 +74,29 @@ const AppLoader = (function () {
       return project(p);
     });
 
-    // Dark: additive white bloom on black (original). Light: inverted grayscale,
-    // dark lines on white via normal compositing.
+    // Additive blend glows nicely on dark; on light use normal compositing.
     ctx.globalCompositeOperation = isDark ? "lighter" : "source-over";
     for (const [i, j] of edges) {
       const a = proj[i], b = proj[j];
       const mw = (a.w + b.w) / 2, md = (a.depth + b.depth) / 2;
-      const mix = (mw + 1) / 2;
-      let g = Math.round(245 - 130 * mix); // original light-gray → white ramp
-      if (!isDark) g = 255 - g;            // invert for light theme
-      const alpha = Math.min(0.2 + md * 1.7, 0.97);
-      ctx.strokeStyle = `rgba(${g},${g},${g},${alpha})`;
+      const mix = (mw + 1) / 2; // blend accent → cyan by 4D depth
+      const r  = Math.round(A[0] + (C[0] - A[0]) * mix);
+      const g  = Math.round(A[1] + (C[1] - A[1]) * mix);
+      const bl = Math.round(A[2] + (C[2] - A[2]) * mix);
+      const alpha = isDark ? Math.min(0.20 + md * 1.7, 0.95) : Math.min(0.42 + md * 1.6, 0.98);
+      ctx.strokeStyle = `rgba(${r},${g},${bl},${alpha})`;
       ctx.lineWidth   = 0.4 + md * 4.4;
-      ctx.shadowColor = isDark ? "rgba(255,255,255,0.9)" : "rgba(0,0,0,0.45)";
-      ctx.shadowBlur  = isDark ? 14 * md * 6 : 5 * md;
+      ctx.shadowColor = isDark ? `rgba(${A[0]},${A[1]},${A[2]},0.9)` : `rgba(${A[0]},${A[1]},${A[2]},0.28)`;
+      ctx.shadowBlur  = isDark ? 14 * md * 6 : 8 * md;
       ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
     }
     ctx.shadowBlur = 0;
-    const dv = isDark ? 255 : 0; // white dots on dark, black dots on light
+    const vtx = isDark ? C : A; // bright cyan dots on dark, accent dots on light
     for (const p of proj) {
       const r = 1.3 + p.depth * 9.5;
+      const a = isDark ? Math.min(0.30 + p.depth * 2.3, 0.97) : Math.min(0.45 + p.depth * 2.0, 0.98);
       ctx.beginPath();
-      ctx.fillStyle = `rgba(${dv},${dv},${dv},${Math.min(0.3 + p.depth * 2.3, 0.97)})`;
+      ctx.fillStyle = `rgba(${vtx[0]},${vtx[1]},${vtx[2]},${a})`;
       ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.fill();
     }
     ctx.globalCompositeOperation = "source-over";
