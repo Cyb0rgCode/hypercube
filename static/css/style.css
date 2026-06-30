@@ -3311,3 +3311,16 @@ body.pill-covered .sidebar-user {
 }
 .ai-voice-btn.done:hover { filter: brightness(1.08); }
 .ai-voice-btn:disabled { opacity: 0.5; cursor: default; }
+
+/* AI voice: raw verbatim "heard" line under the filtered transcript */
+.ai-voice-raw {
+  min-height: 16px;
+  width: 100%;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--muted);
+  opacity: 0.65;
+  text-decoration: line-through;
+  text-decoration-color: rgba(var(--red-rgb), 0.5);
+}

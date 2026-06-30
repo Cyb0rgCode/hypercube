@@ -1550,6 +1550,7 @@ $("#copy-prompt-btn").addEventListener("click", async () => {
   const orb        = document.getElementById("ai-voice-orb");
   const statusEl   = document.getElementById("ai-voice-status");
   const transcript = document.getElementById("ai-voice-transcript");
+  const rawEl      = document.getElementById("ai-voice-raw");
   const cancelBtn  = document.getElementById("ai-voice-cancel");
   const doneBtn    = document.getElementById("ai-voice-done");
 
@@ -1583,6 +1584,7 @@ $("#copy-prompt-btn").addEventListener("click", async () => {
     finalText = ""; cancelled = false; sending = false;
     transcript.textContent = "";
     transcript.classList.remove("has-text");
+    if (rawEl) rawEl.textContent = "";
     statusEl.textContent = "Listening…";
     orb.classList.add("listening");
     doneBtn.disabled = false; cancelBtn.disabled = false;
@@ -1634,11 +1636,14 @@ $("#copy-prompt-btn").addEventListener("click", async () => {
         const tr = e.results[i][0].transcript;
         if (e.results[i].isFinal) finalText += tr + " "; else interim += tr;
       }
-      // Show what you're saying verbatim & live; the Wispr filter is applied
-      // only to the final text when it's sent to the agent.
-      const live = (finalText + interim).replace(/\s{2,}/g, " ").trim();
-      transcript.textContent = live || "…";
-      transcript.classList.toggle("has-text", !!live);
+      const raw      = (finalText + interim).replace(/\s{2,}/g, " ").trim();
+      const filtered = cleanTranscript(raw);
+      // Main line = Wispr-filtered text (live). Sub line = raw verbatim, so
+      // you watch fillers/stutters get stripped in real time.
+      transcript.textContent = filtered || "…";
+      transcript.classList.toggle("has-text", !!filtered);
+      const changed = raw && filtered.toLowerCase() !== raw.toLowerCase();
+      rawEl.textContent = changed ? "heard: " + raw : "";
     };
     rec.onerror = ev => {
       if (ev.error === "not-allowed" || ev.error === "service-not-allowed") {
