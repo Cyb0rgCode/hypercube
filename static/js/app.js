@@ -182,7 +182,7 @@ document.addEventListener("DOMContentLoaded", () => {
     localStorage.setItem("theme", theme);
     // Keep Safari's URL bar color in sync with the page background
     const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.content = theme === "dark" ? "#0a0a0f" : "#f6f6fa";
+    if (meta) meta.content = theme === "dark" ? "#1e1e2e" : "#eff1f5";
     // Light mode = inverted icon, dark mode = base icon
     const iconSrc = theme === "dark" ? "/static/img/icon.png" : "/static/img/icon-inverted.png";
     const fav = document.getElementById("favicon");
