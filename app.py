@@ -956,10 +956,11 @@ def ai_triage(uid):
                 {"role": "system", "content": sys_prompt},
                 {"role": "user", "content": user_payload},
             ],
-            temperature=0.3,
-            top_p=0.95,
-            max_tokens=16384,
-            extra_body={"chat_template_kwargs": {"thinking": True, "reasoning_effort": "high"}},
+            temperature=0.2,
+            top_p=0.9,
+            max_tokens=2048,
+            # Task is simple structured extraction — skip the slow reasoning chain.
+            extra_body={"chat_template_kwargs": {"thinking": False, "reasoning_effort": "low"}},
             stream=False,
         )
         raw = completion.choices[0].message.content or ""
