@@ -1547,12 +1547,14 @@ $("#copy-prompt-btn").addEventListener("click", async () => {
   if (!mic) return;
 
   const overlay    = document.getElementById("ai-voice-overlay");
-  const orb        = document.getElementById("ai-voice-orb");
+  const glowEl     = document.getElementById("ai-voice-glow");
+  const wave       = document.getElementById("ai-voice-wave");
   const statusEl   = document.getElementById("ai-voice-status");
   const transcript = document.getElementById("ai-voice-transcript");
   const rawEl      = document.getElementById("ai-voice-raw");
   const cancelBtn  = document.getElementById("ai-voice-cancel");
   const doneBtn    = document.getElementById("ai-voice-done");
+  const wctx       = wave ? wave.getContext("2d") : null;
 
   // Wispr-Flow-style cleanup: strip filler/disfluencies, collapse stutters,
   // tidy spacing & punctuation. Applied live and before sending to the agent.
@@ -1580,24 +1582,105 @@ $("#copy-prompt-btn").addEventListener("click", async () => {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   let rec = null, finalText = "", cancelled = false, sending = false;
 
+  // ── Audio-reactive waveform + glow (Web Audio) ──────────────────────────────
+  let audioCtx = null, analyser = null, micStream = null, timeData = null;
+  let waveRAF = null, vol = 0;
+
+  async function startAudio() {
+    try {
+      micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioCtx  = new (window.AudioContext || window.webkitAudioContext)();
+      const src = audioCtx.createMediaStreamSource(micStream);
+      analyser  = audioCtx.createAnalyser();
+      analyser.fftSize = 1024;
+      analyser.smoothingTimeConstant = 0.8;
+      src.connect(analyser);
+      timeData = new Uint8Array(analyser.fftSize);
+    } catch (_) {
+      analyser = null; // no mic stream — fall back to a gentle idle wave
+    }
+    drawWave();
+  }
+  function stopAudio() {
+    if (waveRAF) { cancelAnimationFrame(waveRAF); waveRAF = null; }
+    try { micStream && micStream.getTracks().forEach(t => t.stop()); } catch (_) {}
+    try { audioCtx && audioCtx.close(); } catch (_) {}
+    micStream = null; audioCtx = null; analyser = null; vol = 0;
+    if (glowEl) glowEl.style.setProperty("--vol", "0");
+  }
+  function drawWave() {
+    if (!wctx) return;
+    const cs     = getComputedStyle(document.documentElement);
+    const accent = (cs.getPropertyValue("--accent-rgb") || "124,106,247").trim();
+    const cyan   = (cs.getPropertyValue("--cyan-rgb")   || "106,247,200").trim();
+    let phase = 0;
+    function tick() {
+      waveRAF = requestAnimationFrame(tick);
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const r = wave.getBoundingClientRect();
+      if (wave.width !== Math.round(r.width * dpr)) {
+        wave.width = r.width * dpr; wave.height = r.height * dpr;
+      }
+      wctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const w = r.width, h = r.height;
+
+      let level = 0.05;
+      if (analyser) {
+        analyser.getByteTimeDomainData(timeData);
+        let sum = 0;
+        for (let i = 0; i < timeData.length; i++) { const v = (timeData[i] - 128) / 128; sum += v * v; }
+        level = Math.min(1, Math.sqrt(sum / timeData.length) * 3.4);
+      }
+      vol += (level - vol) * 0.25; // smooth
+      if (glowEl) glowEl.style.setProperty("--vol", vol.toFixed(3));
+
+      wctx.clearRect(0, 0, w, h);
+      const mid = h / 2;
+      const amp = (h * 0.36) * (0.10 + vol);
+      phase += 0.16 + vol * 0.28;
+      const grad = wctx.createLinearGradient(0, 0, w, 0);
+      grad.addColorStop(0,   `rgba(${accent},0.10)`);
+      grad.addColorStop(0.5, `rgba(${accent},1)`);
+      grad.addColorStop(1,   `rgba(${cyan},0.9)`);
+      wctx.lineWidth = 3; wctx.lineCap = "round"; wctx.strokeStyle = grad;
+      wctx.beginPath();
+      for (let x = 0; x <= w; x += 4) {
+        const t = x / w;
+        const env = Math.sin(Math.PI * t); // taper toward both ends
+        const y = mid
+          + Math.sin(t * 14 + phase)        * amp        * env
+          + Math.sin(t * 27 - phase * 1.3)  * amp * 0.4  * env;
+        x === 0 ? wctx.moveTo(x, y) : wctx.lineTo(x, y);
+      }
+      wctx.shadowColor = `rgba(${accent},0.7)`;
+      wctx.shadowBlur  = 12 + vol * 24;
+      wctx.stroke();
+      wctx.shadowBlur = 0;
+    }
+    tick();
+  }
+
   function openOverlay() {
     finalText = ""; cancelled = false; sending = false;
     transcript.textContent = "";
     transcript.classList.remove("has-text");
     if (rawEl) rawEl.textContent = "";
     statusEl.textContent = "Listening…";
-    orb.classList.add("listening");
+    overlay.classList.remove("processing");
     doneBtn.disabled = false; cancelBtn.disabled = false;
     overlay.hidden = false;
+    startAudio();
   }
   function closeOverlay() {
+    stopAudio();
+    overlay.classList.remove("processing");
     overlay.hidden = true;
-    orb.classList.remove("listening", "thinking");
   }
 
   async function runTriage(message) {
     sending = true;
-    orb.classList.remove("listening"); orb.classList.add("thinking");
+    stopAudio();
+    overlay.classList.add("processing");
     statusEl.textContent = "Thinking…";
     doneBtn.disabled = true; cancelBtn.disabled = true;
     try {

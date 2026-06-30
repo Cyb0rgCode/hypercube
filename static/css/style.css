@@ -3221,52 +3221,45 @@ body.pill-covered .sidebar-user {
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: rgba(10, 10, 15, 0.55);
-  backdrop-filter: blur(10px) saturate(140%);
-  -webkit-backdrop-filter: blur(10px) saturate(140%);
-  animation: voiceFade 0.2s ease;
+  overflow: hidden;
+  background: var(--bg);
+  animation: voiceFade 0.25s ease;
 }
 @keyframes voiceFade { from { opacity: 0; } to { opacity: 1; } }
 
+/* Voice-reactive glow: --vol (0..1) is updated each frame from mic volume */
+.ai-voice-glow {
+  --vol: 0;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 50%,
+      rgba(var(--accent-rgb), calc(0.12 + var(--vol) * 0.45)), transparent 70%),
+    radial-gradient(ellipse 90% 70% at 50% 120%,
+      rgba(var(--cyan-rgb), calc(0.08 + var(--vol) * 0.30)), transparent 75%);
+  transform: scale(calc(1 + var(--vol) * 0.10));
+  transition: transform 0.08s linear;
+}
+
 .ai-voice-card {
-  width: min(92vw, 460px);
+  position: relative;
+  z-index: 1;
+  width: min(92vw, 620px);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 18px;
+  gap: 22px;
   padding: 32px 28px;
-  border: 1px solid var(--border);
-  border-radius: 24px;
-  background: var(--surface);
-  backdrop-filter: var(--glass-filter);
-  -webkit-backdrop-filter: var(--glass-filter);
-  box-shadow: var(--glass-shadow);
 }
-.ai-voice-orb {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 76px;
-  height: 76px;
-  border-radius: 50%;
-  background: rgba(var(--accent-rgb), 0.12);
-  color: var(--accent);
+.ai-voice-wave {
+  display: block;
+  width: min(86vw, 520px);
+  height: 120px;
 }
-.ai-voice-orb.listening {
-  background: var(--red);
-  color: var(--on-accent);
-  animation: orbPulse 1.3s ease-in-out infinite;
-}
-.ai-voice-orb.thinking {
-  background: rgba(var(--accent-rgb), 0.14);
-  color: var(--accent);
-  animation: orbSpin 0.9s linear infinite;
-}
-@keyframes orbPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(var(--red-rgb), 0.45); }
-  50%      { box-shadow: 0 0 0 14px rgba(var(--red-rgb), 0); }
-}
-@keyframes orbSpin { to { transform: rotate(360deg); } }
+.ai-voice-overlay.processing .ai-voice-wave { opacity: 0.35; }
+.ai-voice-overlay.processing .ai-voice-status { animation: voicePulse 1.1s ease-in-out infinite; }
+@keyframes voicePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
 
 .ai-voice-status {
   font-family: 'JetBrains Mono', monospace;

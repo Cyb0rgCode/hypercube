@@ -577,16 +577,11 @@
     </div>
   </div>
 
-  <!-- Voice agent overlay — live filtered transcript while listening -->
+  <!-- Voice agent overlay — full-screen, glowing, live waveform + transcript -->
   <div id="ai-voice-overlay" class="ai-voice-overlay" hidden>
+    <div class="ai-voice-glow" id="ai-voice-glow" aria-hidden="true"></div>
     <div class="ai-voice-card">
-      <div class="ai-voice-orb" id="ai-voice-orb" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="30" height="30">
-          <rect x="9" y="2" width="6" height="11" rx="3"/>
-          <path d="M5 10v1a7 7 0 0 0 14 0v-1"/>
-          <line x1="12" y1="18" x2="12" y2="22"/>
-        </svg>
-      </div>
+      <canvas id="ai-voice-wave" class="ai-voice-wave" aria-hidden="true"></canvas>
       <div class="ai-voice-status" id="ai-voice-status">Listening…</div>
       <div class="ai-voice-transcript" id="ai-voice-transcript" aria-live="polite"></div>
       <div class="ai-voice-raw" id="ai-voice-raw" aria-hidden="true"></div>
