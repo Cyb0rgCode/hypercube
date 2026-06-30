@@ -1634,7 +1634,9 @@ $("#copy-prompt-btn").addEventListener("click", async () => {
         const tr = e.results[i][0].transcript;
         if (e.results[i].isFinal) finalText += tr + " "; else interim += tr;
       }
-      const live = cleanTranscript(finalText + interim);
+      // Show what you're saying verbatim & live; the Wispr filter is applied
+      // only to the final text when it's sent to the agent.
+      const live = (finalText + interim).replace(/\s{2,}/g, " ").trim();
       transcript.textContent = live || "…";
       transcript.classList.toggle("has-text", !!live);
     };
