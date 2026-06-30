@@ -1554,7 +1554,21 @@ $("#copy-prompt-btn").addEventListener("click", async () => {
   const rawEl      = document.getElementById("ai-voice-raw");
   const cancelBtn  = document.getElementById("ai-voice-cancel");
   const doneBtn    = document.getElementById("ai-voice-done");
+  const langsEl    = document.getElementById("ai-voice-langs");
   const wctx       = wave ? wave.getContext("2d") : null;
+
+  // Recognition language (EN/FR/AR), persisted; default from browser locale.
+  const LANGS = ["en-US", "fr-FR", "ar-SA"];
+  let voiceLang = localStorage.getItem("voiceLang");
+  if (!LANGS.includes(voiceLang)) {
+    const nav = (navigator.language || "en").slice(0, 2);
+    voiceLang = nav === "fr" ? "fr-FR" : nav === "ar" ? "ar-SA" : "en-US";
+  }
+  function markLang() {
+    if (!langsEl) return;
+    for (const b of langsEl.querySelectorAll(".ai-voice-lang"))
+      b.classList.toggle("active", b.dataset.lang === voiceLang);
+  }
 
   // Wispr-Flow-style cleanup: strip filler/disfluencies, collapse stutters,
   // tidy spacing & punctuation. Applied live and before sending to the agent.
@@ -1706,10 +1720,11 @@ $("#copy-prompt-btn").addEventListener("click", async () => {
     }
   }
 
-  mic.addEventListener("click", () => {
-    if (!SR) { toast("Voice input not supported in this browser", "error"); return; }
+  let switchingLang = false;
+
+  function startRecognition() {
     rec = new SR();
-    rec.lang = navigator.language || "en-US";
+    rec.lang = voiceLang;
     rec.interimResults = true;
     rec.continuous = true; // keep listening until Done/Cancel
 
@@ -1735,15 +1750,34 @@ $("#copy-prompt-btn").addEventListener("click", async () => {
       }
     };
     rec.onend = () => {
+      if (switchingLang) { switchingLang = false; startRecognition(); return; } // restart in new language
       if (cancelled || sending) return;
       const message = cleanTranscript(finalText);
       if (message) runTriage(message);
       else { closeOverlay(); toast("Didn't catch that — try again", "error"); }
     };
 
-    openOverlay();
     try { rec.start(); } catch (_) { closeOverlay(); }
+  }
+
+  mic.addEventListener("click", () => {
+    if (!SR) { toast("Voice input not supported in this browser", "error"); return; }
+    markLang();
+    openOverlay();
+    startRecognition();
   });
+
+  // Language switch — applies live (restarts recognition, keeps transcript).
+  if (langsEl) {
+    langsEl.addEventListener("click", e => {
+      const b = e.target.closest(".ai-voice-lang");
+      if (!b) return;
+      voiceLang = b.dataset.lang;
+      localStorage.setItem("voiceLang", voiceLang);
+      markLang();
+      if (rec && !sending && !cancelled) { switchingLang = true; try { rec.stop(); } catch (_) {} }
+    });
+  }
 
   // Done = stop listening and submit. Cancel = abort with no submit.
   doneBtn.addEventListener("click", () => { try { rec && rec.stop(); } catch (_) {} });

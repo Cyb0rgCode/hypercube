@@ -3318,3 +3318,32 @@ body.pill-covered .sidebar-user {
   text-decoration: line-through;
   text-decoration-color: rgba(var(--red-rgb), 0.5);
 }
+
+/* AI voice: language switcher (EN / FR / AR) */
+.ai-voice-langs {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface2);
+}
+.ai-voice-lang {
+  min-width: 48px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.ai-voice-lang:hover { color: var(--text); }
+.ai-voice-lang.active {
+  background: var(--accent);
+  color: var(--on-accent);
+}
