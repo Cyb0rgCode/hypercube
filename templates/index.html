@@ -24,6 +24,13 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
+  <!-- Ambient mode: cinematic drifting color glow behind the UI (YouTube-style) -->
+  <div id="ambient" class="ambient" aria-hidden="true">
+    <span class="ambient-blob a"></span>
+    <span class="ambient-blob b"></span>
+    <span class="ambient-blob c"></span>
+  </div>
+
   <!-- Tesseract boot loader — shown during initial load & login, hidden by app.js -->
   <div id="app-loader" class="app-loader">
     <div class="app-loader-cube">
@@ -141,6 +148,12 @@
 
   <div class="sidebar-user" id="sidebar-user">
     <span class="sidebar-user-name" id="sidebar-user-name"></span>
+    <button type="button" id="ambient-toggle" class="theme-toggle" aria-label="Toggle ambient mode" title="Ambient mode" aria-pressed="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="5"/>
+        <path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4" opacity="0.55"/>
+      </svg>
+    </button>
     <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Toggle theme" title="Toggle theme">
       <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <circle cx="12" cy="12" r="4"/>

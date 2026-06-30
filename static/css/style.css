@@ -3347,3 +3347,66 @@ body.pill-covered .sidebar-user {
   background: var(--accent);
   color: var(--on-accent);
 }
+
+/* ── Ambient mode: cinematic drifting color glow behind the UI ─────────────── */
+.ambient {
+  position: fixed;
+  inset: -10%;
+  z-index: -1;            /* behind all UI, above body background */
+  pointer-events: none;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+body.ambient-on .ambient { opacity: 1; }
+
+.ambient-blob {
+  position: absolute;
+  width: 46vw;
+  height: 46vw;
+  min-width: 360px;
+  min-height: 360px;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.55;
+  will-change: transform;
+}
+.ambient-blob.a {
+  top: -8%; left: -6%;
+  background: radial-gradient(circle, rgba(var(--accent-rgb), 0.9), transparent 68%);
+  animation: ambientDriftA 26s ease-in-out infinite;
+}
+.ambient-blob.b {
+  bottom: -12%; right: -8%;
+  background: radial-gradient(circle, rgba(var(--cyan-rgb), 0.8), transparent 68%);
+  animation: ambientDriftB 32s ease-in-out infinite;
+}
+.ambient-blob.c {
+  top: 30%; left: 40%;
+  background: radial-gradient(circle, rgba(var(--green-rgb), 0.6), transparent 70%);
+  animation: ambientDriftC 38s ease-in-out infinite;
+}
+@keyframes ambientDriftA {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%      { transform: translate(14vw, 10vh) scale(1.15); }
+  66%      { transform: translate(6vw, -8vh) scale(0.95); }
+}
+@keyframes ambientDriftB {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(-16vw, -10vh) scale(1.2); }
+}
+@keyframes ambientDriftC {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  40%      { transform: translate(-12vw, 12vh) scale(1.1); }
+  75%      { transform: translate(10vw, 4vh) scale(0.9); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ambient-blob { animation: none !important; }
+}
+
+/* Ambient toggle active state */
+#ambient-toggle[aria-pressed="true"] {
+  color: var(--accent);
+  background: var(--accent-dim);
+  border-color: rgba(var(--accent-rgb), 0.3);
+}

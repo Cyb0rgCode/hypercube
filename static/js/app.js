@@ -209,6 +209,20 @@ document.addEventListener("DOMContentLoaded", () => {
       if (typeof activeTab !== "undefined" && activeTab === "dashboard" && typeof loadDashboard === "function") loadDashboard();
     });
   }
+
+  // ── Ambient mode (YouTube-style drifting glow) ──────────────────────────────
+  const ambientBtn = document.getElementById("ambient-toggle");
+  function applyAmbient(on) {
+    document.body.classList.toggle("ambient-on", on);
+    if (ambientBtn) ambientBtn.setAttribute("aria-pressed", on ? "true" : "false");
+    localStorage.setItem("ambient", on ? "1" : "0");
+  }
+  applyAmbient(localStorage.getItem("ambient") === "1");
+  if (ambientBtn) {
+    ambientBtn.addEventListener("click", () => {
+      applyAmbient(!document.body.classList.contains("ambient-on"));
+    });
+  }
 });
 
 
