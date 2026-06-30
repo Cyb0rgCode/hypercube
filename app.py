@@ -868,20 +868,34 @@ def _ai_client():
     return OpenAI(base_url="https://integrate.api.nvidia.com/v1", api_key=key)
 
 
-def _ai_examples(conn, uid, limit=40):
-    """Recent tasks → few-shot so the model mirrors how the user categorizes."""
+def _ai_examples(conn, uid, scan=120, limit=15):
+    """Distinct category/chapter patterns from recent tasks → compact few-shot.
+
+    Deduping to unique (category, chapter, task_type) signatures keeps the
+    prompt small (faster) while still teaching the model the user's naming
+    and urgent/important habits.
+    """
     rows = conn.execute(
         """SELECT title, category, chapter, task_type, priority, urgent, important
              FROM tasks
             WHERE user_id = ? AND archived = 0
             ORDER BY id DESC LIMIT ?""",
-        (uid, limit),
+        (uid, scan),
     ).fetchall()
-    return [{
-        "title": r["title"], "category": r["category"] or "", "chapter": r["chapter"] or "",
-        "task_type": r["task_type"] or "", "priority": r["priority"],
-        "urgent": bool(r["urgent"]), "important": bool(r["important"]),
-    } for r in rows]
+    seen, out = set(), []
+    for r in rows:
+        sig = (r["category"] or "", r["chapter"] or "", r["task_type"] or "")
+        if sig in seen:
+            continue
+        seen.add(sig)
+        out.append({
+            "title": r["title"], "category": r["category"] or "", "chapter": r["chapter"] or "",
+            "task_type": r["task_type"] or "", "priority": r["priority"],
+            "urgent": bool(r["urgent"]), "important": bool(r["important"]),
+        })
+        if len(out) >= limit:
+            break
+    return out
 
 
 def _parse_task_json(raw):
@@ -960,7 +974,7 @@ def ai_triage(uid):
             ],
             temperature=0.2,
             top_p=0.9,
-            max_tokens=2048,
+            max_tokens=1024,
             stream=False,
         )
         raw = completion.choices[0].message.content or ""
