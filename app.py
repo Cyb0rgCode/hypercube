@@ -854,6 +854,150 @@ def create_task(uid):
     return jsonify(dict(row)), 201
 
 
+# ── AI task-triage agent (NVIDIA NIM) ─────────────────────────────────────────
+
+def _ai_client():
+    """Build an OpenAI-compatible client pointed at NVIDIA NIM. None if no key."""
+    key = os.environ.get("NVIDIA_API_KEY", "").strip()
+    if not key:
+        return None
+    try:
+        from openai import OpenAI
+    except ImportError:
+        return None
+    return OpenAI(base_url="https://integrate.api.nvidia.com/v1", api_key=key)
+
+
+def _ai_examples(conn, uid, limit=40):
+    """Recent tasks → few-shot so the model mirrors how the user categorizes."""
+    rows = conn.execute(
+        """SELECT title, category, chapter, task_type, priority, urgent, important
+             FROM tasks
+            WHERE user_id = ? AND archived = 0
+            ORDER BY id DESC LIMIT ?""",
+        (uid, limit),
+    ).fetchall()
+    return [{
+        "title": r["title"], "category": r["category"] or "", "chapter": r["chapter"] or "",
+        "task_type": r["task_type"] or "", "priority": r["priority"],
+        "urgent": bool(r["urgent"]), "important": bool(r["important"]),
+    } for r in rows]
+
+
+def _parse_task_json(raw):
+    """Best-effort: strip code fences / prose, return a list of task dicts or None."""
+    import json as _json
+    if not raw:
+        return None
+    s = raw.strip()
+    s = re.sub(r"^```(?:json)?\s*", "", s)
+    s = re.sub(r"\s*```$", "", s)
+    try:
+        v = _json.loads(s)
+        if isinstance(v, dict) and isinstance(v.get("tasks"), list):
+            return v["tasks"]
+        if isinstance(v, list):
+            return v
+    except Exception:
+        pass
+    m = re.search(r"\[.*\]", s, re.DOTALL)  # first JSON array anywhere
+    if m:
+        try:
+            v = _json.loads(m.group(0))
+            if isinstance(v, list):
+                return v
+        except Exception:
+            pass
+    return None
+
+
+@app.route("/api/ai/triage", methods=["POST"])
+@require_user
+def ai_triage(uid):
+    import json as _json
+    message = ((request.json or {}).get("message") or "").strip()
+    if not message:
+        return jsonify({"error": "empty message"}), 400
+
+    client = _ai_client()
+    if client is None:
+        return jsonify({"error": "AI not configured — set NVIDIA_API_KEY"}), 503
+
+    conn = get_db()
+    examples = _ai_examples(conn, uid)
+    conn.close()
+
+    today = str(date.today())
+    sys_prompt = (
+        "You are a multilingual task-triage agent for a personal productivity app. "
+        f"Today is {today}. The user may write in ANY language — understand it. "
+        "Extract every actionable task from the user's message and assign fields. "
+        "Keep each task title in the SAME language the user wrote in. "
+        "Return ONLY a JSON array — no markdown fences, no prose. Each object has EXACTLY these keys: "
+        '"title" (string), "category" (string, "" if none), "chapter" (string or null), '
+        '"task_type" (one of exercise|quiz|assignment|reading|lab|project|lecture|other), '
+        '"priority" (high|medium|low), "urgent" (boolean), "important" (boolean), '
+        '"deadline" ("YYYY-MM-DD" or null), "estimated_minutes" (positive integer). '
+        "urgent=true only when due within 48h or explicitly marked urgent. "
+        "important=true when it affects a grade, key milestone, stated goal, or has major consequences. "
+        "Study the user's PAST TASKS and reuse their EXACT category/chapter names and their "
+        "urgent/important habits whenever a new task resembles a recurring past one."
+    )
+    user_payload = (
+        "PAST TASKS (category & urgency patterns):\n"
+        + _json.dumps(examples, ensure_ascii=False)
+        + "\n\nMESSAGE:\n" + message
+    )
+
+    try:
+        completion = client.chat.completions.create(
+            model="deepseek-ai/deepseek-v4-flash",
+            messages=[
+                {"role": "system", "content": sys_prompt},
+                {"role": "user", "content": user_payload},
+            ],
+            temperature=0.3,
+            top_p=0.95,
+            max_tokens=16384,
+            extra_body={"chat_template_kwargs": {"thinking": True, "reasoning_effort": "high"}},
+            stream=False,
+        )
+        raw = completion.choices[0].message.content or ""
+    except Exception as exc:
+        return jsonify({"error": f"AI request failed: {exc}"}), 502
+
+    parsed = _parse_task_json(raw)
+    if parsed is None:
+        return jsonify({"error": "AI returned unparseable output"}), 502
+
+    created = []
+    conn = get_db()
+    for t in parsed:
+        if not isinstance(t, dict):
+            continue
+        title = str(t.get("title", "")).strip()
+        if not title:
+            continue
+        prio = t.get("priority") if t.get("priority") in ("high", "medium", "low") else "medium"
+        cur = conn.execute(
+            """INSERT INTO tasks
+                 (title, priority, deadline, urgent, important, category,
+                  estimated_minutes, task_type, chapter, user_id)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                title, prio, (t.get("deadline") or None),
+                int(bool(t.get("urgent", False))), int(bool(t.get("important", False))),
+                str(t.get("category") or ""), int(t.get("estimated_minutes") or 0),
+                str(t.get("task_type") or ""), str(t.get("chapter") or ""), uid,
+            ),
+        )
+        row = conn.execute("SELECT * FROM tasks WHERE id = ?", (cur.lastrowid,)).fetchone()
+        created.append(dict(row))
+    conn.commit()
+    conn.close()
+    return jsonify({"created": created, "count": len(created)})
+
+
 @app.route("/api/tasks/<int:task_id>", methods=["PUT"])
 @require_user
 def update_task(uid, task_id):

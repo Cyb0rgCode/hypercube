@@ -3,3 +3,4 @@ gunicorn>=21.2.0
 livereload>=2.6.3
 requests>=2.31.0
 APScheduler>=3.10.0
+openai>=1.40.0

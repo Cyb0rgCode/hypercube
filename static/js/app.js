@@ -1541,6 +1541,53 @@ $("#copy-prompt-btn").addEventListener("click", async () => {
   }
 });
 
+// ── AI triage agent: natural-language (any language) → auto-assigned tasks ────
+(function wireAIAgent() {
+  const form = document.getElementById("ai-agent-form");
+  if (!form) return;
+  const input = document.getElementById("ai-agent-input");
+  const btn   = document.getElementById("ai-agent-send");
+  const label = btn?.querySelector(".ai-agent-send-label");
+  const spin  = btn?.querySelector(".ai-agent-spinner");
+
+  function busy(on) {
+    if (btn)   btn.disabled = on;
+    if (input) input.disabled = on;
+    if (label) label.hidden = on;
+    if (spin)  spin.hidden  = !on;
+  }
+
+  form.addEventListener("submit", async e => {
+    e.preventDefault();
+    const message = input.value.trim();
+    if (!message) return;
+    busy(true);
+    try {
+      const res = await api("/api/ai/triage", "POST", { message });
+      if (res && res.error) { toast(res.error, "error"); return; }
+      const created = res?.created || [];
+      if (created.length) {
+        for (const t of created) allTasks.unshift(t);
+        refreshTaskDatalists();
+        input.value = "";
+        if (taskFilter === "archive") {
+          document.querySelector('#tab-tasks .filter-btn[data-filter="all"]')?.click();
+        } else {
+          renderTasks();
+        }
+        toast(`AI added ${created.length} task${created.length === 1 ? "" : "s"}`);
+      } else {
+        toast("AI found no tasks in that message", "error");
+      }
+    } catch (err) {
+      toast((err && err.message) ? err.message : "AI triage failed", "error");
+    } finally {
+      busy(false);
+      input.focus();
+    }
+  });
+})();
+
 $("#export-tasks-btn").addEventListener("click", async () => {
   try {
     // Fetch fresh so the export captures any changes made on other devices.
