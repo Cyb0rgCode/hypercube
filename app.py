@@ -951,7 +951,9 @@ def ai_triage(uid):
 
     try:
         completion = client.chat.completions.create(
-            model="deepseek-ai/deepseek-v4-flash",
+            # Small non-reasoning instruct model — fastest fit for structured
+            # JSON extraction (no chain-of-thought latency), multilingual.
+            model="meta/llama-3.1-8b-instruct",
             messages=[
                 {"role": "system", "content": sys_prompt},
                 {"role": "user", "content": user_payload},
@@ -959,8 +961,6 @@ def ai_triage(uid):
             temperature=0.2,
             top_p=0.9,
             max_tokens=2048,
-            # Task is simple structured extraction — skip the slow reasoning chain.
-            extra_body={"chat_template_kwargs": {"thinking": False, "reasoning_effort": "low"}},
             stream=False,
         )
         raw = completion.choices[0].message.content or ""
