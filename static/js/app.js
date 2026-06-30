@@ -1557,6 +1557,29 @@ $("#copy-prompt-btn").addEventListener("click", async () => {
     if (spin)  spin.hidden  = !on;
   }
 
+  // Wispr-Flow-style cleanup: strip filler/disfluencies, collapse stutters,
+  // tidy spacing & punctuation before the transcript is sent to the agent.
+  const FILLERS = [
+    // English
+    "um", "uh", "uhh", "uhm", "erm", "hmm", "mm", "mmm", "ah", "er",
+    "you know", "i mean", "sort of", "kind of", "like i said",
+    // French
+    "euh", "heu", "ben", "bah", "hein", "bof", "du coup", "tu vois", "genre",
+    // Arabic
+    "يعني", "اه", "آه", "ايه",
+  ];
+  function cleanTranscript(text) {
+    let s = " " + (text || "").toLowerCase() + " ";
+    for (const f of FILLERS) {
+      const esc = f.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      s = s.replace(new RegExp("\\s" + esc + "(?=\\s|[.,!?])", "giu"), " ");
+    }
+    s = s.replace(/\b(\w+)(\s+\1\b)+/giu, "$1");   // collapse repeated words (stutters)
+    s = s.replace(/\s+([.,!?;:])/g, "$1");          // no space before punctuation
+    s = s.replace(/\s{2,}/g, " ").trim();           // collapse spaces
+    return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+  }
+
   // Voice input via the browser-native Web Speech API (multilingual, free).
   const mic = document.getElementById("ai-agent-mic");
   const SR  = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1581,6 +1604,7 @@ $("#copy-prompt-btn").addEventListener("click", async () => {
       rec.onend = () => {
         listening = false; mic.classList.remove("listening");
         input.placeholder = "Speak or type in any language…";
+        input.value = cleanTranscript(finalText || input.value); // Wispr-style filter
         if (input.value.trim()) form.requestSubmit(); // hand off to triage
       };
       try { rec.start(); } catch (_) {}
