@@ -3190,3 +3190,124 @@ body.pill-covered .sidebar-user {
   0%, 100% { box-shadow: 0 0 0 0 rgba(var(--red-rgb), 0.45); }
   50%      { box-shadow: 0 0 0 7px rgba(var(--red-rgb), 0); }
 }
+
+/* ── AI voice agent: trigger button ───────────────────────────────────────── */
+.ai-agent-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  justify-content: center;
+  margin-bottom: 10px;
+  padding: 11px 16px;
+  border: 1px solid rgba(var(--accent-rgb), 0.30);
+  border-radius: 14px;
+  background: linear-gradient(90deg, rgba(var(--accent-rgb), 0.10), rgba(var(--cyan-rgb), 0.06));
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: filter 0.15s, transform 0.1s, border-color 0.15s;
+}
+.ai-agent-trigger:hover { filter: brightness(1.05); border-color: rgba(var(--accent-rgb), 0.5); }
+.ai-agent-trigger:active { transform: scale(0.99); }
+
+/* ── AI voice agent: full-screen listening overlay ────────────────────────── */
+.ai-voice-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10055; /* above app, below boot loader (10060) */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(10, 10, 15, 0.55);
+  backdrop-filter: blur(10px) saturate(140%);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  animation: voiceFade 0.2s ease;
+}
+@keyframes voiceFade { from { opacity: 0; } to { opacity: 1; } }
+
+.ai-voice-card {
+  width: min(92vw, 460px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  padding: 32px 28px;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: var(--surface);
+  backdrop-filter: var(--glass-filter);
+  -webkit-backdrop-filter: var(--glass-filter);
+  box-shadow: var(--glass-shadow);
+}
+.ai-voice-orb {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: rgba(var(--accent-rgb), 0.12);
+  color: var(--accent);
+}
+.ai-voice-orb.listening {
+  background: var(--red);
+  color: var(--on-accent);
+  animation: orbPulse 1.3s ease-in-out infinite;
+}
+.ai-voice-orb.thinking {
+  background: rgba(var(--accent-rgb), 0.14);
+  color: var(--accent);
+  animation: orbSpin 0.9s linear infinite;
+}
+@keyframes orbPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(var(--red-rgb), 0.45); }
+  50%      { box-shadow: 0 0 0 14px rgba(var(--red-rgb), 0); }
+}
+@keyframes orbSpin { to { transform: rotate(360deg); } }
+
+.ai-voice-status {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.ai-voice-transcript {
+  min-height: 56px;
+  max-height: 38vh;
+  overflow-y: auto;
+  width: 100%;
+  text-align: center;
+  font-size: 18px;
+  line-height: 1.5;
+  color: var(--muted);
+  font-style: italic;
+}
+.ai-voice-transcript.has-text { color: var(--text); font-style: normal; }
+
+.ai-voice-actions { display: flex; gap: 12px; width: 100%; }
+.ai-voice-btn {
+  flex: 1;
+  height: 44px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: filter 0.15s, opacity 0.15s;
+}
+.ai-voice-btn.cancel {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+}
+.ai-voice-btn.cancel:hover { background: var(--accent-dim); }
+.ai-voice-btn.done {
+  border: none;
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.ai-voice-btn.done:hover { filter: brightness(1.08); }
+.ai-voice-btn:disabled { opacity: 0.5; cursor: default; }

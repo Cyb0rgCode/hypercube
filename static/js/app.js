@@ -1541,24 +1541,20 @@ $("#copy-prompt-btn").addEventListener("click", async () => {
   }
 });
 
-// ── AI triage agent: natural-language (any language) → auto-assigned tasks ────
+// ── AI triage agent: voice-only (any language) → auto-assigned tasks ──────────
 (function wireAIAgent() {
-  const form = document.getElementById("ai-agent-form");
-  if (!form) return;
-  const input = document.getElementById("ai-agent-input");
-  const btn   = document.getElementById("ai-agent-send");
-  const label = btn?.querySelector(".ai-agent-send-label");
-  const spin  = btn?.querySelector(".ai-agent-spinner");
+  const mic = document.getElementById("ai-agent-mic");
+  if (!mic) return;
 
-  function busy(on) {
-    if (btn)   btn.disabled = on;
-    if (input) input.disabled = on;
-    if (label) label.hidden = on;
-    if (spin)  spin.hidden  = !on;
-  }
+  const overlay    = document.getElementById("ai-voice-overlay");
+  const orb        = document.getElementById("ai-voice-orb");
+  const statusEl   = document.getElementById("ai-voice-status");
+  const transcript = document.getElementById("ai-voice-transcript");
+  const cancelBtn  = document.getElementById("ai-voice-cancel");
+  const doneBtn    = document.getElementById("ai-voice-done");
 
   // Wispr-Flow-style cleanup: strip filler/disfluencies, collapse stutters,
-  // tidy spacing & punctuation before the transcript is sent to the agent.
+  // tidy spacing & punctuation. Applied live and before sending to the agent.
   const FILLERS = [
     // English
     "um", "uh", "uhh", "uhm", "erm", "hmm", "mm", "mmm", "ah", "er",
@@ -1580,44 +1576,28 @@ $("#copy-prompt-btn").addEventListener("click", async () => {
     return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
   }
 
-  // Voice input via the browser-native Web Speech API (multilingual, free).
-  const mic = document.getElementById("ai-agent-mic");
-  const SR  = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (mic && SR) {
-    let rec = null, listening = false;
-    mic.addEventListener("click", () => {
-      if (listening) { try { rec.stop(); } catch (_) {} return; }
-      rec = new SR();
-      rec.lang = navigator.language || "en-US";
-      rec.interimResults = true;
-      rec.continuous = false;
-      let finalText = "";
-      rec.onstart  = () => { listening = true;  mic.classList.add("listening");  input.placeholder = "Listening…"; };
-      rec.onresult = e => {
-        let interim = "";
-        for (let i = e.resultIndex; i < e.results.length; i++) {
-          const tr = e.results[i][0].transcript;
-          if (e.results[i].isFinal) finalText += tr; else interim += tr;
-        }
-        input.value = (finalText + interim).trim();
-      };
-      rec.onend = () => {
-        listening = false; mic.classList.remove("listening");
-        input.placeholder = "Speak or type in any language…";
-        input.value = cleanTranscript(finalText || input.value); // Wispr-style filter
-        if (input.value.trim()) form.requestSubmit(); // hand off to triage
-      };
-      try { rec.start(); } catch (_) {}
-    });
-  } else if (mic) {
-    mic.hidden = true; // browser lacks speech recognition
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let rec = null, finalText = "", cancelled = false, sending = false;
+
+  function openOverlay() {
+    finalText = ""; cancelled = false; sending = false;
+    transcript.textContent = "";
+    transcript.classList.remove("has-text");
+    statusEl.textContent = "Listening…";
+    orb.classList.add("listening");
+    doneBtn.disabled = false; cancelBtn.disabled = false;
+    overlay.hidden = false;
+  }
+  function closeOverlay() {
+    overlay.hidden = true;
+    orb.classList.remove("listening", "thinking");
   }
 
-  form.addEventListener("submit", async e => {
-    e.preventDefault();
-    const message = input.value.trim();
-    if (!message) return;
-    busy(true);
+  async function runTriage(message) {
+    sending = true;
+    orb.classList.remove("listening"); orb.classList.add("thinking");
+    statusEl.textContent = "Thinking…";
+    doneBtn.disabled = true; cancelBtn.disabled = true;
     try {
       const res = await api("/api/ai/triage", "POST", { message });
       if (res && res.error) { toast(res.error, "error"); return; }
@@ -1625,7 +1605,6 @@ $("#copy-prompt-btn").addEventListener("click", async () => {
       if (created.length) {
         for (const t of created) allTasks.unshift(t);
         refreshTaskDatalists();
-        input.value = "";
         if (taskFilter === "archive") {
           document.querySelector('#tab-tasks .filter-btn[data-filter="all"]')?.click();
         } else {
@@ -1638,10 +1617,52 @@ $("#copy-prompt-btn").addEventListener("click", async () => {
     } catch (err) {
       toast((err && err.message) ? err.message : "AI triage failed", "error");
     } finally {
-      busy(false);
-      input.focus();
+      closeOverlay();
     }
+  }
+
+  mic.addEventListener("click", () => {
+    if (!SR) { toast("Voice input not supported in this browser", "error"); return; }
+    rec = new SR();
+    rec.lang = navigator.language || "en-US";
+    rec.interimResults = true;
+    rec.continuous = true; // keep listening until Done/Cancel
+
+    rec.onresult = e => {
+      let interim = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const tr = e.results[i][0].transcript;
+        if (e.results[i].isFinal) finalText += tr + " "; else interim += tr;
+      }
+      const live = cleanTranscript(finalText + interim);
+      transcript.textContent = live || "…";
+      transcript.classList.toggle("has-text", !!live);
+    };
+    rec.onerror = ev => {
+      if (ev.error === "not-allowed" || ev.error === "service-not-allowed") {
+        cancelled = true; closeOverlay();
+        toast("Microphone permission denied", "error");
+      }
+    };
+    rec.onend = () => {
+      if (cancelled || sending) return;
+      const message = cleanTranscript(finalText);
+      if (message) runTriage(message);
+      else { closeOverlay(); toast("Didn't catch that — try again", "error"); }
+    };
+
+    openOverlay();
+    try { rec.start(); } catch (_) { closeOverlay(); }
   });
+
+  // Done = stop listening and submit. Cancel = abort with no submit.
+  doneBtn.addEventListener("click", () => { try { rec && rec.stop(); } catch (_) {} });
+  cancelBtn.addEventListener("click", () => {
+    cancelled = true;
+    try { rec && rec.stop(); } catch (_) {}
+    closeOverlay();
+  });
+  overlay.addEventListener("click", e => { if (e.target === overlay) cancelBtn.click(); });
 })();
 
 $("#export-tasks-btn").addEventListener("click", async () => {

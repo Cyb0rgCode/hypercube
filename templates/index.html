@@ -274,22 +274,14 @@
         </div>
         <button type="submit">Add</button>
       </form>
-      <form id="ai-agent-form" class="ai-agent">
-        <span class="ai-agent-icon" aria-hidden="true">✦</span>
-        <input id="ai-agent-input" type="text" autocomplete="off"
-               placeholder="Speak or type in any language…" />
-        <button type="button" id="ai-agent-mic" class="ai-agent-mic" title="Talk to the agent" aria-label="Voice input">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="17" height="17" aria-hidden="true">
-            <rect x="9" y="2" width="6" height="11" rx="3"/>
-            <path d="M5 10v1a7 7 0 0 0 14 0v-1"/>
-            <line x1="12" y1="18" x2="12" y2="22"/>
-          </svg>
-        </button>
-        <button type="submit" id="ai-agent-send" class="ai-agent-send" title="Triage with AI">
-          <span class="ai-agent-send-label">Triage</span>
-          <span class="ai-agent-spinner" hidden aria-hidden="true"></span>
-        </button>
-      </form>
+      <button type="button" id="ai-agent-mic" class="ai-agent-trigger" title="Talk to the agent">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true">
+          <rect x="9" y="2" width="6" height="11" rx="3"/>
+          <path d="M5 10v1a7 7 0 0 0 14 0v-1"/>
+          <line x1="12" y1="18" x2="12" y2="22"/>
+        </svg>
+        <span>Talk to AI agent</span>
+      </button>
       <div class="import-row">
         <label class="import-btn" for="task-import-input">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -581,6 +573,25 @@
           </label>
         </div>
         <p class="auth-backup-hint">Export before redeploying · Import to restore after a data wipe</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Voice agent overlay — live filtered transcript while listening -->
+  <div id="ai-voice-overlay" class="ai-voice-overlay" hidden>
+    <div class="ai-voice-card">
+      <div class="ai-voice-orb" id="ai-voice-orb" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="30" height="30">
+          <rect x="9" y="2" width="6" height="11" rx="3"/>
+          <path d="M5 10v1a7 7 0 0 0 14 0v-1"/>
+          <line x1="12" y1="18" x2="12" y2="22"/>
+        </svg>
+      </div>
+      <div class="ai-voice-status" id="ai-voice-status">Listening…</div>
+      <div class="ai-voice-transcript" id="ai-voice-transcript" aria-live="polite"></div>
+      <div class="ai-voice-actions">
+        <button type="button" id="ai-voice-cancel" class="ai-voice-btn cancel">Cancel</button>
+        <button type="button" id="ai-voice-done" class="ai-voice-btn done">Done</button>
       </div>
     </div>
   </div>
