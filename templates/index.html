@@ -277,7 +277,14 @@
       <form id="ai-agent-form" class="ai-agent">
         <span class="ai-agent-icon" aria-hidden="true">✦</span>
         <input id="ai-agent-input" type="text" autocomplete="off"
-               placeholder="Tell the AI in any language… e.g. “rendez-vous médecin demain urgent”" />
+               placeholder="Speak or type in any language…" />
+        <button type="button" id="ai-agent-mic" class="ai-agent-mic" title="Talk to the agent" aria-label="Voice input">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="17" height="17" aria-hidden="true">
+            <rect x="9" y="2" width="6" height="11" rx="3"/>
+            <path d="M5 10v1a7 7 0 0 0 14 0v-1"/>
+            <line x1="12" y1="18" x2="12" y2="22"/>
+          </svg>
+        </button>
         <button type="submit" id="ai-agent-send" class="ai-agent-send" title="Triage with AI">
           <span class="ai-agent-send-label">Triage</span>
           <span class="ai-agent-spinner" hidden aria-hidden="true"></span>

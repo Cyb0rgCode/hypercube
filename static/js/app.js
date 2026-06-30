@@ -1557,6 +1557,38 @@ $("#copy-prompt-btn").addEventListener("click", async () => {
     if (spin)  spin.hidden  = !on;
   }
 
+  // Voice input via the browser-native Web Speech API (multilingual, free).
+  const mic = document.getElementById("ai-agent-mic");
+  const SR  = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (mic && SR) {
+    let rec = null, listening = false;
+    mic.addEventListener("click", () => {
+      if (listening) { try { rec.stop(); } catch (_) {} return; }
+      rec = new SR();
+      rec.lang = navigator.language || "en-US";
+      rec.interimResults = true;
+      rec.continuous = false;
+      let finalText = "";
+      rec.onstart  = () => { listening = true;  mic.classList.add("listening");  input.placeholder = "Listening…"; };
+      rec.onresult = e => {
+        let interim = "";
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          const tr = e.results[i][0].transcript;
+          if (e.results[i].isFinal) finalText += tr; else interim += tr;
+        }
+        input.value = (finalText + interim).trim();
+      };
+      rec.onend = () => {
+        listening = false; mic.classList.remove("listening");
+        input.placeholder = "Speak or type in any language…";
+        if (input.value.trim()) form.requestSubmit(); // hand off to triage
+      };
+      try { rec.start(); } catch (_) {}
+    });
+  } else if (mic) {
+    mic.hidden = true; // browser lacks speech recognition
+  }
+
   form.addEventListener("submit", async e => {
     e.preventDefault();
     const message = input.value.trim();

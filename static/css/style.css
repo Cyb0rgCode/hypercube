@@ -3162,3 +3162,31 @@ body.pill-covered .sidebar-user {
   animation: aiSpin 0.7s linear infinite;
 }
 @keyframes aiSpin { to { transform: rotate(360deg); } }
+
+/* AI agent mic button */
+.ai-agent-mic {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(var(--accent-rgb), 0.30);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.1s;
+}
+.ai-agent-mic:hover { background: var(--accent-dim); }
+.ai-agent-mic:active { transform: scale(0.92); }
+.ai-agent-mic.listening {
+  background: var(--red);
+  color: var(--on-accent);
+  border-color: var(--red);
+  animation: micPulse 1.2s ease-in-out infinite;
+}
+@keyframes micPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(var(--red-rgb), 0.45); }
+  50%      { box-shadow: 0 0 0 7px rgba(var(--red-rgb), 0); }
+}
